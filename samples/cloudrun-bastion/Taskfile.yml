@@ -1,0 +1,47 @@
+version: '3'
+
+# Pass vars in env vars or .taskfilerc.yml
+vars:
+  REGISTRY: europe-west1-docker.pkg.dev
+  PROJECT: myproject
+  REPO: '{{.REGISTRY}}/{{.PROJECT}}/cloudrun-bastion/bastion'
+
+tasks:
+  build:
+    desc: Build the Dante SOCKS5 bastion image
+    cmds:
+      - podman build -t {{.REPO}}:latest ./app
+
+  scan-trivy:
+    desc: Run Trivy vulnerability scanner on the bastion image
+    cmds:
+      - trivy image --exit-code 1 --severity HIGH,CRITICAL {{.REPO}}:latest
+
+  scan-kics:
+    desc: Run KICS static analysis security testing on IaC
+    cmds:
+      - kics scan -p . -o infra/ --no-progress
+
+  tf-init:
+    desc: Initialize Terraform
+    dir: infra
+    cmds:
+      - terraform init
+
+  tf-plan:
+    desc: Run Terraform plan
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - if [ -f ../terraform.tfvars ]; then terraform plan -var-file="../terraform.tfvars"; else terraform plan; fi
+
+  tf-test:
+    desc: Run Terraform unit tests
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - terraform test
+
+  all:
+    desc: Run all security scans, tests and terraform plan
+    deps: [scan-trivy, scan-kics, tf-test, tf-plan]

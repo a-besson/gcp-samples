@@ -1,0 +1,42 @@
+version: '3'
+
+vars:
+  ENVIRONMENT: base
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  tf-init:
+    desc: Initialize Terraform
+    dir: infra
+    cmds:
+      - terraform init
+
+  tf-plan:
+    desc: Plan Terraform changes
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - if [ -f ../terraform.tfvars ]; then terraform plan -var-file="../terraform.tfvars"; else terraform plan; fi
+
+  tf-apply:
+    desc: Apply Terraform changes
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - if [ -f ../terraform.tfvars ]; then terraform apply --auto-approve -var-file="../terraform.tfvars"; else terraform apply --auto-approve; fi
+
+  tf-destroy:
+    desc: Destroy Terraform resources
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - if [ -f ../terraform.tfvars ]; then terraform destroy --auto-approve -var-file="../terraform.tfvars"; else terraform destroy --auto-approve; fi
+
+  review:
+    desc: Run pre-commit hooks on all files
+    cmds:
+      - pre-commit run --all-files

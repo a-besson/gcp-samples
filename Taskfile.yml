@@ -1,0 +1,76 @@
+version: '3'
+
+vars:
+  SKILLS_CLI: npx -y skills
+  SKILLS:
+    - new-terraform-provider
+    - provider-resources
+    - provider-actions
+    - refactor-module
+    - terraform-style-guide
+    - terraform-stacks
+    - terraform-test
+
+  BREW_DEPS:
+    - node
+    - terraform
+    - go-task/tap/go-task
+    - trivy
+    - pre-commit
+    - tflint
+    - terraform-docs
+    - gitleaks
+  BREW_CASKS:
+    - google-cloud-sdk
+
+tasks:
+  review:
+    desc: "Exécute tous les hooks pre-commit sur l'intégralité du projet."
+    cmds:
+      - pre-commit run --all-files
+
+  init:
+    desc: "Configuration complète du projet : installation des dépendances système et des skills IA."
+    cmds:
+      - task: deps-install
+      - task: skills
+
+  deps-install:
+    desc: "Installe les dépendances système via Homebrew (macOS)."
+    cmds:
+      - for: { var: BREW_DEPS }
+        cmd: brew list {{.ITEM}} >/dev/null 2>&1 || brew install {{.ITEM}}
+      - for: { var: BREW_CASKS }
+        cmd: brew list --cask {{.ITEM}} >/dev/null 2>&1 || brew install --cask {{.ITEM}}
+
+  deps-uninstall:
+    desc: "Désinstalle les dépendances système via Homebrew."
+    cmds:
+      - for: { var: BREW_DEPS }
+        cmd: brew uninstall {{.ITEM}} || true
+      - for: { var: BREW_CASKS }
+        cmd: brew uninstall --cask {{.ITEM}} || true
+
+  skills:
+    desc: "Installe et met à jour les dépendances skills IA (uniquement pour l'agent antigravity)."
+    cmds:
+      - cmd: mkdir -p .agents/skills/community
+      - for: { var: SKILLS }
+        cmd: "{{.SKILLS_CLI}} add hashicorp/agent-skills --skill {{.ITEM}} --agent antigravity -y"
+      - cmd: "{{.SKILLS_CLI}} update -y || echo 'Update skipped'"
+      - for: { var: SKILLS }
+        cmd: "mv .agents/skills/{{.ITEM}} .agents/skills/community/ 2>/dev/null || true"
+      - cmd: "rm -r .claude .kiro 2>/dev/null || true"
+
+  uninstall-skills:
+    desc: "Désinstalle tous les skills IA du projet et nettoie le dossier community."
+    cmds:
+      - for: { var: SKILLS }
+        cmd: "{{.SKILLS_CLI}} remove {{.ITEM}} -y || echo '{{.ITEM}} already removed'"
+      - cmd: "rm -r .agents/skills/community 2>/dev/null || true"
+      - cmd: "rm -r .claude .kiro 2>/dev/null || true"
+
+  default:
+    desc: "Liste toutes les commandes du projet."
+    cmds:
+      - task --list

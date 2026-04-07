@@ -1,0 +1,47 @@
+version: '3'
+
+vars:
+  REGISTRY: europe-west1-docker.pkg.dev
+  PROJECT: my-project
+  REPO: '{{.REGISTRY}}/{{.PROJECT}}/cloudrun-simple/app'
+
+tasks:
+  build:
+    desc: Build Podman images for service and job
+    cmds:
+      - podman build --build-arg ./app
+
+  scan-trivy:
+    desc: Run Trivy vulnerability scanner on images
+    deps: [build]
+    cmds:
+      - echo "Trivy scan not implemented yet"
+
+  scan-kics:
+    desc: Run KICS static application security testing
+    cmds:
+      - echo "KICS scan not implemented yet"
+
+  tf-init:
+    desc: Initialize Terraform
+    dir: infra
+    cmds:
+      - terraform init
+
+  tf-plan:
+    desc: Run Terraform plan
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - if [ -f ../terraform.tfvars ]; then terraform plan -var-file="../terraform.tfvars"; else terraform plan; fi
+
+  tf-test:
+    desc: Run Terraform tests
+    dir: infra
+    deps: [tf-init]
+    cmds:
+      - terraform test
+
+  all:
+    desc: Run all security scans and terraform plan
+    deps: [scan-trivy, scan-kics, tf-test, tf-plan]
