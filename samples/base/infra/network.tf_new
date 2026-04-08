@@ -1,0 +1,44 @@
+module "vpc" {
+  source  = "terraform-google-modules/network/google"
+  version = "~> 16.0"
+
+  project_id   = var.project_id
+  network_name = local.vpc_name
+  routing_mode = "REGIONAL"
+
+  subnets = [
+    {
+      subnet_name           = "${var.subnet_public_name}${var.name_suffix}"
+      subnet_ip             = var.subnet_public_ip
+      subnet_region         = var.region
+      subnet_private_access = "false"
+    },
+    {
+      subnet_name           = "${var.subnet_priv_a_name}${var.name_suffix}"
+      subnet_ip             = var.subnet_priv_a_ip
+      subnet_region         = var.region
+      subnet_private_access = "true"
+    },
+    {
+      subnet_name           = "${var.subnet_priv_b_name}${var.name_suffix}"
+      subnet_ip             = var.subnet_priv_b_ip
+      subnet_region         = var.region
+      subnet_private_access = "true"
+    }
+  ]
+
+  secondary_ranges = {
+    "${var.subnet_priv_a_name}${var.name_suffix}" = [
+      {
+        range_name    = "secondary-range"
+        ip_cidr_range = var.subnet_priv_a_secondary_ip
+      }
+    ],
+    "${var.subnet_priv_b_name}${var.name_suffix}" = [
+      {
+        range_name    = "secondary-range"
+        ip_cidr_range = var.subnet_priv_b_secondary_ip
+      }
+    ]
+  }
+}

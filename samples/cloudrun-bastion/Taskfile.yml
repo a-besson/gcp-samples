@@ -1,47 +1,97 @@
 version: '3'
 
-# Pass vars in env vars or .taskfilerc.yml
+dotenv:
+  - ../../.env
+
+
 vars:
-  REGISTRY: europe-west1-docker.pkg.dev
-  PROJECT: myproject
-  REPO: '{{.REGISTRY}}/{{.PROJECT}}/cloudrun-bastion/bastion'
+  ENVIRONMENT: cloudrun-bastion
+  REPO_NAME: cloudrun-bastion
+  IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/bastion:latest"
+  PROJECT_NUMBER: "{{.TF_VAR_project_number}}"
+  NAME_SUFFIX: "{{.TF_VAR_name_suffix}}"
+  IAP_USER_EMAIL: "{{.TF_VAR_iap_user_email}}"
 
 tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Create GCS state bucket and Artifact Registry (idempotent)"
+    cmds:
+      - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
+      - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
+      # Artifact Registry is also managed by TF, but we need it for the first build
+      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Bastion Repo" || true
+
   build:
-    desc: Build the Dante SOCKS5 bastion image
+    desc: "Build and push the Docker image to Artifact Registry"
+    dir: app
     cmds:
-      - podman build -t {{.REPO}}:latest ./app
+      - gcloud auth print-access-token | podman login -u oauth2accesstoken --password-stdin {{.REGION}}-docker.pkg.dev
+      - podman build --platform linux/amd64 -t {{.IMAGE_NAME}} .
+      - podman push {{.IMAGE_NAME}}
 
-  scan-trivy:
-    desc: Run Trivy vulnerability scanner on the bastion image
-    cmds:
-      - trivy image --exit-code 1 --severity HIGH,CRITICAL {{.REPO}}:latest
-
-  scan-kics:
-    desc: Run KICS static analysis security testing on IaC
-    cmds:
-      - kics scan -p . -o infra/ --no-progress
-
-  tf-init:
-    desc: Initialize Terraform
+  init:
+    desc: "Initialize Terraform with GCS backend"
     dir: infra
     cmds:
-      - terraform init
+      - |
+        terraform init \
+          -backend-config="bucket={{.PROJECT_ID}}-tfstate" \
+          -backend-config="prefix=cloudrun-bastion" \
+          -reconfigure {{.CLI_ARGS}}
 
-  tf-plan:
-    desc: Run Terraform plan
+  plan:
+    desc: "Plan Terraform changes"
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - if [ -f ../terraform.tfvars ]; then terraform plan -var-file="../terraform.tfvars"; else terraform plan; fi
+      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
-  tf-test:
-    desc: Run Terraform unit tests
+  apply:
+    desc: "Apply Terraform changes"
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - terraform test
+      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
-  all:
-    desc: Run all security scans, tests and terraform plan
-    deps: [scan-trivy, scan-kics, tf-test, tf-plan]
+  destroy:
+    desc: "Destroy Terraform resources"
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+
+  test:
+    desc: "Run Terraform tests"
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+
+  review:
+    desc: "Run pre-commit hooks on all files"
+    cmds:
+      - pre-commit run --all-files
+
+  bastion-run:
+    desc: "Run the Bastion container locally for testing (Port 1080 -> 8080)"
+    cmds:
+      - echo "Starting Bastion on socks5h://localhost:1080"
+      - podman run -p 1080:8080 --name cloudrun-bastion-test --rm {{.IMAGE_NAME}}
+
+  test-local:
+    desc: "Test the local bastion using curl"
+    cmds:
+      - curl -v -x http://localhost:1080 http://google.com
+
+  db-proxy:
+    desc: "Start Cloud SQL Auth Proxy (Industrial SOCKS/TCP tunnel)"
+    cmds:
+      - echo "Starting Cloud SQL Auth Proxy for {{.PROJECT_ID}}..."
+      - |
+        CONNECTION_NAME=$(cd infra && terraform output -raw db_instance_connection_name)
+        cloud-sql-proxy $CONNECTION_NAME --port 5432

@@ -20,16 +20,8 @@ variable "region" {
 variable "image_job" {
   description = "Docker image for the Cloud Run Job"
   type        = string
-}
-
-variable "network" {
-  description = "VPC network name"
-  type        = string
-  default     = "default"
-}
-
-variable "subnet" {
-  description = "VPC subnet name"
-  type        = string
-  default     = "default"
+  validation {
+    condition     = length(var.image_job) > 0
+    error_message = "image_job must not be empty."
+  }
 }

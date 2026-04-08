@@ -19,8 +19,8 @@ resource "google_sql_database_instance" "postgres" {
     tier = "db-f1-micro"
 
     ip_configuration {
-      ipv4_enabled    = false
-      private_network = data.google_compute_network.vpc.id
+      ipv4_enabled    = true
+      private_network = data.terraform_remote_state.base.outputs.network_self_link
     }
   }
 

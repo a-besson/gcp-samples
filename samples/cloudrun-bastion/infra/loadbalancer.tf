@@ -1,55 +1,44 @@
-# --- Static Global IP ---
-resource "google_compute_global_address" "bastion_ip" {
-  name    = "bastion-static-ip"
+# --- Global HTTP Load Balancer ---
+# Exposes the Cloud Run bastion via a Serverless Network Endpoint Group (NEG)
+# Reference: https://github.com/terraform-google-modules/terraform-google-lb-http/tree/main/modules/serverless_negs
+
+module "lb_http" {
+  source  = "terraform-google-modules/lb-http/google//modules/serverless_negs"
+  version = "~> 12.0"
+
+  name    = "bastion-lb${var.name_suffix}"
   project = var.project_id
-}
 
-# --- Backend Service ---
-# IAP is enabled directly on the backend service, enforcing identity checks
-# before any request reaches the Cloud Run container.
-resource "google_compute_backend_service" "bastion_backend" {
-  name                  = "bastion-backend"
-  project               = var.project_id
-  protocol              = "HTTPS"
-  load_balancing_scheme = "EXTERNAL_MANAGED"
+  # SSL/DNS handled via Cloud Endpoints (see dns.tf) or custom domain
+  ssl                             = true
+  managed_ssl_certificate_domains = [local.domain]
+  https_redirect                  = true
+  labels                          = { "env" = "dev", "managed-by" = "terraform" }
 
-  backend {
-    group = google_compute_region_network_endpoint_group.bastion_neg.id
+  backends = {
+    bastion = {
+      description = "Serverless NEG for Cloud Run bastion"
+      groups      = []
+      serverless_neg_backends = [
+        {
+          region = var.region
+          type   = "cloud-run"
+          service = {
+            name = google_cloud_run_v2_service.bastion.name
+          }
+        }
+      ]
+      enable_cdn = false
+
+      iap_config = {
+        enable               = true
+        oauth2_client_id     = google_iap_client.bastion_iap_client.client_id
+        oauth2_client_secret = google_iap_client.bastion_iap_client.secret
+      }
+      log_config = {
+        enable      = true
+        sample_rate = 1.0
+      }
+    }
   }
-
-  iap {
-    enabled              = true
-    oauth2_client_id     = google_iap_client.bastion_iap_client.client_id
-    oauth2_client_secret = google_iap_client.bastion_iap_client.secret
-  }
-
-  log_config {
-    enable      = true
-    sample_rate = 1.0
-  }
-}
-
-# --- URL Map ---
-resource "google_compute_url_map" "bastion_url_map" {
-  name            = "bastion-url-map"
-  project         = var.project_id
-  default_service = google_compute_backend_service.bastion_backend.id
-}
-
-# --- Target HTTPS Proxy ---
-resource "google_compute_target_https_proxy" "bastion_https_proxy" {
-  name             = "bastion-https-proxy"
-  project          = var.project_id
-  url_map          = google_compute_url_map.bastion_url_map.id
-  ssl_certificates = [google_compute_managed_ssl_certificate.bastion_ssl.id]
-}
-
-# --- Global Forwarding Rule ---
-resource "google_compute_global_forwarding_rule" "bastion_forwarding_rule" {
-  name                  = "bastion-https-forwarding-rule"
-  project               = var.project_id
-  ip_address            = google_compute_global_address.bastion_ip.id
-  port_range            = "443"
-  target                = google_compute_target_https_proxy.bastion_https_proxy.id
-  load_balancing_scheme = "EXTERNAL_MANAGED"
 }

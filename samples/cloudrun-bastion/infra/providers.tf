@@ -3,7 +3,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 5.0.0"
+      version = "~> 6.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -15,10 +15,7 @@ terraform {
     }
   }
   # Uncomment and configure for production use
-  # backend "gcs" {
-  #   bucket = "YOUR-TFSTATE-BUCKET"
-  #   prefix = "cloudrun-bastion"
-  # }
+  backend "gcs" {}
 }
 
 provider "google" {

@@ -4,16 +4,37 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 5.0"
+      version = "~> 6.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 6.0"
     }
   }
 
-  backend "local" {
-    path = "terraform.tfstate"
+  backend "gcs" {
+    # Configuration dynamically provided by Task during initialization
   }
 }
 
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  default_labels = {
+    project    = "base"
+    managed-by = "terraform"
+    env        = "dev"
+  }
+}
+
+provider "google-beta" {
+  project = var.project_id
+  region  = var.region
+
+  default_labels = {
+    project    = "base"
+    managed-by = "terraform"
+    env        = "dev"
+  }
 }

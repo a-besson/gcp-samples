@@ -6,47 +6,53 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | >= 5.0.0 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 6.0 |
+| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 6.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_google"></a> [google](#provider\_google) | 5.45.2 |
+| <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
+| <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_project_services"></a> [project\_services](#module\_project\_services) | terraform-google-modules/project-factory/google//modules/project_services | ~> 14.5 |
+| <a name="module_lb_http"></a> [lb\_http](#module\_lb\_http) | terraform-google-modules/lb-http/google//modules/serverless_negs | ~> 12.0 |
+| <a name="module_project_services"></a> [project\_services](#module\_project\_services) | terraform-google-modules/project-factory/google//modules/project_services | ~> 18.0 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [google_artifact_registry_repository.repo](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository) | resource |
-| [google_cloud_run_v2_service.hello_service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
+| [google_cloud_run_v2_service.exposed_service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
+| [google_cloud_run_v2_service.internal_service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
 | [google_cloud_run_v2_service_iam_member.invoker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
-| [google_service_account.cloudrun_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
-| [google_compute_network.vpc](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/compute_network) | data source |
-| [google_compute_subnetwork.subnet](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/compute_subnetwork) | data source |
+| [google_cloud_run_v2_service_iam_member.test_sa_invoker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
+| [google_service_account.exposed_service_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
+| [google_service_account.internal_service_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
+| [google_service_account.test_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
+| [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_image_service"></a> [image\_service](#input\_image\_service) | Docker image for the Cloud Run service | `string` | n/a | yes |
-| <a name="input_network"></a> [network](#input\_network) | VPC network name | `string` | `"default"` | no |
+| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for resource naming (used for test isolation) | `string` | `""` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The Google Cloud Project ID | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The GCP region to deploy resources in | `string` | `"europe-west1"` | no |
-| <a name="input_subnet"></a> [subnet](#input\_subnet) | VPC subnet name | `string` | `"default"` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_artifact_registry_url"></a> [artifact\_registry\_url](#output\_artifact\_registry\_url) | The Artifact Registry repository URL |
-| <a name="output_curl_command"></a> [curl\_command](#output\_curl\_command) | curl command to test the service (requires gcloud identity token) |
-| <a name="output_service_name"></a> [service\_name](#output\_service\_name) | The name of the Cloud Run service |
-| <a name="output_service_url"></a> [service\_url](#output\_service\_url) | The public URL of the Cloud Run service |
+| <a name="output_exposed_service_name"></a> [exposed\_service\_name](#output\_exposed\_service\_name) | The name of the service |
+| <a name="output_exposed_service_url"></a> [exposed\_service\_url](#output\_exposed\_service\_url) | The auto-generated Cloud Run URL for the service |
+| <a name="output_internal_service_name"></a> [internal\_service\_name](#output\_internal\_service\_name) | The name of the internal service |
+| <a name="output_internal_service_url"></a> [internal\_service\_url](#output\_internal\_service\_url) | The auto-generated Cloud Run URL for the internal service |
+| <a name="output_load_balancer_ip"></a> [load\_balancer\_ip](#output\_load\_balancer\_ip) | The external IP address of the HTTP Load Balancer. |
+| <a name="output_tester_sa_email"></a> [tester\_sa\_email](#output\_tester\_sa\_email) | The email of the tester Service Account |
 <!-- END_TF_DOCS -->

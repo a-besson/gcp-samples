@@ -5,7 +5,7 @@ locals {
 # Enable required GCP APIs
 module "project_services" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
-  version = "~> 17.0"
+  version = "~> 18.0"
 
   project_id                  = var.project_id
   disable_services_on_destroy = false
@@ -36,9 +36,10 @@ resource "google_artifact_registry_repository" "repo" {
 # as soon as the Artifact Registry is created.
 resource "null_resource" "docker_build_push" {
   triggers = {
-    # Re-run if Dockerfile or sockd.conf changes
+    # Re-run if Dockerfile changes
     dockerfile = filesha256("${path.module}/../app/Dockerfile")
-    conf       = filesha256("${path.module}/../app/sockd.conf")
+    config     = filesha256("${path.module}/../app/tinyproxy.conf")
+    startup    = filesha256("${path.module}/../app/startup.sh")
   }
 
   provisioner "local-exec" {

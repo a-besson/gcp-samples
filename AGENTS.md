@@ -72,6 +72,7 @@ Le fichier doit lister les synthèses par jour comme un changelog, en utilisant 
 - **Standard modules first**: Use [terraform-google-modules](https://github.com/terraform-google-modules) and [terraform-aws-modules](https://github.com/terraform-aws-modules) before writing raw resources.
 - **Version pinning**: Pin all provider and module versions.
 - **Remote state**: Always use a remote backend with state locking and encryption at rest.
+- **Variable management**: Use a top-level `.env` file instead of `terraform.tfvars`. Use `dotenv` in `Taskfile.yml` and let Terraform automatically pick up variables via the `TF_VAR_` prefix.
 - **Variable validation**: Add `validation` blocks for all input variables.
 - **Network isolation**: Default to private subnets, disable public IPs unless explicitly required.
 - **Least privilege IAM**: Use granular roles. Avoid editor/owner bindings.

@@ -1,7 +1,7 @@
 # Enable APIs
 module "project_services" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
-  version = "~> 14.5"
+  version = "~> 18.0"
 
   project_id                  = var.project_id
   disable_services_on_destroy = false
@@ -14,8 +14,12 @@ module "project_services" {
 }
 
 # --- Artifact Registry ---
-resource "google_artifact_registry_repository" "repo" {
-  project       = var.project_id
+# Uses the official terraform-google-modules module with vulnerability scanning enabled.
+module "artifact_registry" {
+  source  = "GoogleCloudPlatform/artifact-registry/google"
+  version = "~> 0.8"
+
+  project_id    = var.project_id
   location      = var.region
   repository_id = "cloudrun-simple-job"
   description   = "Docker images for Cloud Run Job"

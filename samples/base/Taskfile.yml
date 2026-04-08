@@ -1,5 +1,9 @@
 version: '3'
 
+dotenv:
+  - ../../.env
+
+
 vars:
   ENVIRONMENT: base
 
@@ -9,32 +13,56 @@ tasks:
     cmds:
       - task --list
 
-  tf-init:
-    desc: Initialize Terraform
+  setup:
+    desc: "Create the initial GCS bucket for remote state (Prerequisite: gcloud authenticated)"
+    cmds:
+      - |
+        BUCKET_NAME="${PROJECT_ID}-tfstate";
+        if ! gcloud storage buckets describe gs://${BUCKET_NAME} --project ${PROJECT_ID} > /dev/null 2>&1; then
+          echo "Creating bucket gs://${BUCKET_NAME}...";
+          gcloud storage buckets create gs://${BUCKET_NAME} --project ${PROJECT_ID} --location ${REGION} --uniform-bucket-level-access;
+          gcloud storage buckets update gs://${BUCKET_NAME} --versioning;
+        else
+          echo "Bucket gs://${BUCKET_NAME} already exists.";
+        fi
+
+  init:
+    desc: Initialize Terraform with dynamic GCS backend
     dir: infra
     cmds:
-      - terraform init
+      - |
+        terraform init \
+          -backend-config="bucket=${PROJECT_ID}-tfstate" \
+          -backend-config="prefix=base" \
+          -reconfigure {{.CLI_ARGS}}
 
-  tf-plan:
+  plan:
     desc: Plan Terraform changes
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - if [ -f ../terraform.tfvars ]; then terraform plan -var-file="../terraform.tfvars"; else terraform plan; fi
+      - terraform plan -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
 
-  tf-apply:
+  test:
+    desc: Run Terraform tests
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform test -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+
+  apply:
     desc: Apply Terraform changes
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - if [ -f ../terraform.tfvars ]; then terraform apply --auto-approve -var-file="../terraform.tfvars"; else terraform apply --auto-approve; fi
+      - terraform apply --auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
 
-  tf-destroy:
+  destroy:
     desc: Destroy Terraform resources
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - if [ -f ../terraform.tfvars ]; then terraform destroy --auto-approve -var-file="../terraform.tfvars"; else terraform destroy --auto-approve; fi
+      - terraform destroy --auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
 
   review:
     desc: Run pre-commit hooks on all files

@@ -3,6 +3,8 @@ variable "project_id" {
   type        = string
 }
 
+
+
 variable "region" {
   description = "The region where subnets will be deployed."
   type        = string
@@ -30,7 +32,13 @@ variable "subnet_priv_a_name" {
 variable "subnet_priv_a_ip" {
   description = "IP range for the first private subnet."
   type        = string
-  default     = "10.0.4.0/20"
+  default     = "10.0.4.0/22"
+}
+
+variable "subnet_priv_a_secondary_ip" {
+  description = "Secondary IP range for the first private subnet."
+  type        = string
+  default     = "100.64.0.0/22"
 }
 
 variable "subnet_priv_b_name" {
@@ -42,5 +50,17 @@ variable "subnet_priv_b_name" {
 variable "subnet_priv_b_ip" {
   description = "IP range for the second private subnet."
   type        = string
-  default     = "10.0.20.0/20"
+  default     = "10.0.20.0/22"
+}
+
+variable "subnet_priv_b_secondary_ip" {
+  description = "Secondary IP range for the second private subnet."
+  type        = string
+  default     = "100.64.4.0/22"
+}
+
+variable "name_suffix" {
+  description = "Suffix for resource names (used in tests to avoid naming conflicts)."
+  type        = string
+  default     = ""
 }

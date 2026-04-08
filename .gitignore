@@ -5,8 +5,6 @@
 **/*.tfstate
 **/*.tfstate.backup
 
-terraform.tfvars
-
 # Pre-commit cache
 .precommitcache/
 
@@ -32,3 +30,7 @@ NOTE.md
 
 # Agents
 skills-lock.json
+
+# Env/vars files
+.env
+terraform.tfvars

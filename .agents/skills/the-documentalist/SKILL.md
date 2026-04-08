@@ -48,6 +48,17 @@ Every individual sample must contain its own detailed README with structural con
   ```
 - Group every architectural or configuration decision as a bullet point beneath the single daily log heading. Do NOT create multiple headings for the same date.
 
+## 🎨 Visual Assets & Icons
+
+Pour garantir une documentation visuelle de haute qualité et cohérente avec l'écosystème Google Cloud, utilise les ressources suivantes :
+
+1. **GCP Official Icons** : Priorité absolue pour les diagrammes d'architecture. Utilise [gcpicons.com](https://gcpicons.com) pour récupérer les derniers assets.
+2. **Draw.io Icons** : Utilise les bibliothèques d'icônes GCP natives intégrées à Draw.io pour les schémas d'infrastructure.
+3. **Icons8** : Pour les besoins d'icônes plus variés ou stylistiques, utilise [img.icons8.com](https://img.icons8.com) (ex: logo Google Cloud, icônes d'outils tiers). 
+
+> [!TIP]
+> Dans le `README.md`, privilégie les URLs d'images directes provenant de sources fiables comme Icons8 pour les logos d'en-tête, afin de garantir un affichage fluide et professionnel.
+
 ## ✍️ Markdown Writing Best Practices
 
 - **Use Emojis Strategically**: Provide visual anchors for readability without cluttering.

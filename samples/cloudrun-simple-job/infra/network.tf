@@ -1,12 +1,10 @@
 # --- Network ---
-# VPC and subnets are pre-provisioned. We reference existing resources via data sources.
-data "google_compute_network" "vpc" {
-  name    = var.network
-  project = var.project_id
-}
-
-data "google_compute_subnetwork" "subnet" {
-  name    = var.subnet
-  region  = var.region
-  project = var.project_id
+# VPC and subnets are pre-provisioned in the 'base' module.
+# We reference them via remote state to ensure consistency.
+data "terraform_remote_state" "base" {
+  backend = "gcs"
+  config = {
+    bucket = "${var.project_id}-tfstate"
+    prefix = "base"
+  }
 }

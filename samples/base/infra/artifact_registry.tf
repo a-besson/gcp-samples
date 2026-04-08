@@ -4,7 +4,7 @@ module "artifact_registry_job" {
 
   project_id    = var.project_id
   location      = var.region
-  repository_id = "cloudrun-simple-job"
+  repository_id = "cloudrun-simple-job${var.name_suffix}"
   format        = "DOCKER"
   description   = "Docker repository for cloudrun-simple-job"
 }
@@ -15,7 +15,7 @@ module "artifact_registry_service" {
 
   project_id    = var.project_id
   location      = var.region
-  repository_id = "cloudrun-simple-service"
+  repository_id = "cloudrun-simple-service${var.name_suffix}"
   format        = "DOCKER"
   description   = "Docker repository for cloudrun-simple-service"
 }

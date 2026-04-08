@@ -5,7 +5,7 @@ output "job_name" {
 
 output "artifact_registry_url" {
   description = "The Artifact Registry repository URL"
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.repo.repository_id}"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/cloudrun-simple-job"
 }
 
 output "run_job_command" {

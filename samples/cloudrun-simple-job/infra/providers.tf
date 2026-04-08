@@ -1,15 +1,14 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = "~> 1.5"
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 5.0.0"
+      version = "~> 6.0"
     }
   }
-  # backend "gcs" {
-  #   bucket = "YOUR-TFSTATE-BUCKET"
-  #   prefix = "cloudrun-simple-job"
-  # }
+
+  # Uncomment and set YOUR-TFSTATE-BUCKET once the GCS bucket is provisioned.
+  backend "gcs" {}
 }
 
 provider "google" {

@@ -1,7 +1,7 @@
 # GCP Samples
 
 <p align="center">
-  <img src="https://www.gstatic.com/devrel-devsite/prod/v0e0f589edd85502a40d78d7d0825db8ea5ef3b99ab4070381ee86977c9168730/cloud/images/cloud-logo.svg" alt="Google Cloud" width="200"/>
+  <img src="https://img.icons8.com/?size=100&id=fpGM2cINbbu4&format=png&color=000000" alt="Google Cloud"/>
 </p>
 
 <p align="center">
@@ -20,8 +20,10 @@ Install the required tools before running any sample:
 **macOS (Homebrew)**
 
 ```bash
-brew install terraform go-task/tap/go-task trivy pre-commit tflint terraform-docs gitleaks
+brew install terraform go-task/tap/go-task trivy pre-commit tflint terraform-docs gitleaks libpq
 brew install --cask google-cloud-sdk
+# On macOS, link libpq to get psql
+echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> ~/.zshrc
 ```
 
 **Linux (apt + curl)**
@@ -72,7 +74,8 @@ gcloud config set project <YOUR_PROJECT_ID>
 | Name | Description | README |
 |---|---|---|
 | [base](samples/base/) | Déploiement du réseau VPC de base avec sous-réseaux isolés. | [→ README](samples/base/README.md) |
-| [cloudrun-simple](samples/cloudrun-simple/) | Service web et job Cloud Run Python déployés sur VPC privé avec Terraform, Trivy et KICS. | [→ README](samples/cloudrun-simple/README.md) |
+| [cloudrun-simple-service](samples/cloudrun-simple-service/) | Service web Cloud Run Python déployé sur VPC privé avec Terraform. | [→ README](samples/cloudrun-simple-service/README.md) |
+| [cloudrun-simple-job](samples/cloudrun-simple-job/) | Job Cloud Run Python pour exécution de batchs asynchrones. | [→ README](samples/cloudrun-simple-job/README.md) |
 | [cloudrun-bastion](samples/cloudrun-bastion/) | Proxy SOCKS5 sur Cloud Run protégé par IAP via HTTPS Load Balancer avec Direct VPC Egress. | [→ README](samples/cloudrun-bastion/README.md) |
 
 ---
@@ -85,7 +88,8 @@ gcp-samples/
 │   └── skills/
 │       └── community/# Third-party and CLI-downloaded skills
 ├── samples/          # GCP use-case samples
-│   ├── cloudrun-simple/
+│   ├── cloudrun-simple-service/
+│   ├── cloudrun-simple-job/
 │   └── cloudrun-bastion/
 └── .pre-commit-config.yaml
 ```

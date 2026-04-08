@@ -1,15 +1,19 @@
 version: '3'
 
+dotenv: [.env]
+
 vars:
   SKILLS_CLI: npx -y skills
   SKILLS:
     - new-terraform-provider
+    - bahayonghang/drawio-skills@drawio
     - provider-resources
     - provider-actions
     - refactor-module
     - terraform-style-guide
     - terraform-stacks
     - terraform-test
+    - psql-shell
 
   BREW_DEPS:
     - node
@@ -20,12 +24,77 @@ vars:
     - tflint
     - terraform-docs
     - gitleaks
+    - libpq
   BREW_CASKS:
     - google-cloud-sdk
 
 tasks:
+  apply-all:
+    desc: "Déploie l'intégralité des stacks (base d'abord, puis les services en parallèle)."
+    cmds:
+      - task: apply-base
+      - task: apply-samples
+
+  apply-base:
+    internal: true
+    cmds:
+      - task: terraform-cmd
+        vars: { DIR: "samples/base", CMD: "apply" }
+
+  apply-samples:
+    internal: true
+    cmds:
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-bastion", CMD: "apply" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-simple-job", CMD: "apply" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-simple-service", CMD: "apply" }
+    parallel: true
+
+  destroy-all:
+    desc: "Détruit l'intégralité des ressources (services d'abord en parallèle, puis base à la fin)."
+    cmds:
+      - task: destroy-samples
+      - task: destroy-base
+
+  destroy-base:
+    internal: true
+    cmds:
+      - task: terraform-cmd
+        vars: { DIR: "samples/base", CMD: "destroy" }
+
+  destroy-samples:
+    internal: true
+    cmds:
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-bastion", CMD: "destroy" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-simple-job", CMD: "destroy" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-simple-service", CMD: "destroy" }
+    parallel: true
+
+  test-all:
+    desc: "Exécute tous les tests Terraform du projet en parallèle."
+    cmds:
+      - task: terraform-cmd
+        vars: { DIR: "samples/base", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-bastion", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-simple-job", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/cloudrun-simple-service", CMD: "test" }
+    parallel: true
+
+  terraform-cmd:
+    internal: true
+    cmds:
+      - task --dir {{.DIR}} {{.CMD}}
+
   review:
-    desc: "Exécute tous les hooks pre-commit sur l'intégralité du projet."
+    desc: "Exécute les contrôles de qualité (pre-commit) et déclenche une revue approfondie par l'agent IA."
     cmds:
       - pre-commit run --all-files
 

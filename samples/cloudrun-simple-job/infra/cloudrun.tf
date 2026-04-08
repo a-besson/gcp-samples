@@ -2,9 +2,10 @@
 # A Cloud Run Job runs a container to completion (batch/task).
 # It is triggered manually or via Cloud Scheduler, not via HTTP.
 resource "google_cloud_run_v2_job" "hello_job" {
-  name     = "hello-world-job"
-  location = var.region
-  project  = var.project_id
+  name                = "hello-world-job"
+  location            = var.region
+  project             = var.project_id
+  deletion_protection = false
 
   template {
     template {
@@ -13,8 +14,8 @@ resource "google_cloud_run_v2_job" "hello_job" {
       # Direct VPC Egress: containers run within the private subnet.
       vpc_access {
         network_interfaces {
-          network    = data.google_compute_network.vpc.name
-          subnetwork = data.google_compute_subnetwork.subnet.name
+          network    = data.terraform_remote_state.base.outputs.network_name
+          subnetwork = data.terraform_remote_state.base.outputs.subnet_priv_a.name
         }
         egress = "ALL_TRAFFIC"
       }
@@ -28,5 +29,5 @@ resource "google_cloud_run_v2_job" "hello_job" {
     }
   }
 
-  depends_on = [google_artifact_registry_repository.repo]
+  depends_on = [module.artifact_registry]
 }

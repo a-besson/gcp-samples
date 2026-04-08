@@ -3,16 +3,34 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 5.0.0"
+      version = "~> 6.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 6.0"
     }
   }
-  # backend "gcs" {
-  #   bucket = "YOUR-TFSTATE-BUCKET"
-  #   prefix = "cloudrun-simple-service"
-  # }
+  backend "gcs" {}
 }
 
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  default_labels = {
+    project    = "cloudrun-ssl-service"
+    managed-by = "terraform"
+    env        = "dev"
+  }
+}
+
+provider "google-beta" {
+  project = var.project_id
+  region  = var.region
+
+  default_labels = {
+    project    = "cloudrun-ssl-service"
+    managed-by = "terraform"
+    env        = "dev"
+  }
 }

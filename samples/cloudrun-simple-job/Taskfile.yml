@@ -1,47 +1,72 @@
 version: '3'
 
+dotenv:
+  - ../../.env
+
 vars:
-  REGISTRY: europe-west1-docker.pkg.dev
-  PROJECT: my-project
-  REPO: '{{.REGISTRY}}/{{.PROJECT}}/cloudrun-simple/app'
+  REPO_NAME: cloudrun-simple-job
+  IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/job:latest"
 
 tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Create GCS state bucket and Artifact Registry (idempotent)"
+    cmds:
+      - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
+      - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
+      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Simple Job Repo" || true
+
   build:
-    desc: Build Podman images for service and job
+    desc: "Build and push the Docker image to Artifact Registry"
+    dir: app
     cmds:
-      - podman build --build-arg ./app
+      - gcloud auth print-access-token | podman login -u oauth2accesstoken --password-stdin {{.REGION}}-docker.pkg.dev
+      - podman build --platform linux/amd64 -t {{.IMAGE_NAME}} .
+      - podman push {{.IMAGE_NAME}}
 
-  scan-trivy:
-    desc: Run Trivy vulnerability scanner on images
-    deps: [build]
-    cmds:
-      - echo "Trivy scan not implemented yet"
-
-  scan-kics:
-    desc: Run KICS static application security testing
-    cmds:
-      - echo "KICS scan not implemented yet"
-
-  tf-init:
-    desc: Initialize Terraform
+  init:
+    desc: Initialize Terraform with GCS backend
     dir: infra
     cmds:
-      - terraform init
+      - |
+        terraform init \
+          -backend-config="bucket=${PROJECT_ID}-tfstate" \
+          -backend-config="prefix=cloudrun-simple-job" \
+          -reconfigure {{.CLI_ARGS}}
 
-  tf-plan:
-    desc: Run Terraform plan
+  plan:
+    desc: Plan Terraform changes
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - if [ -f ../terraform.tfvars ]; then terraform plan -var-file="../terraform.tfvars"; else terraform plan; fi
+      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
 
-  tf-test:
+  apply:
+    desc: Apply Terraform changes
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
+
+  destroy:
+    desc: Destroy Terraform resources
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
+
+  test:
     desc: Run Terraform tests
     dir: infra
-    deps: [tf-init]
+    deps: [init]
     cmds:
-      - terraform test
+      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
 
-  all:
-    desc: Run all security scans and terraform plan
-    deps: [scan-trivy, scan-kics, tf-test, tf-plan]
+  review:
+    desc: Run pre-commit hooks on all files
+    cmds:
+      - pre-commit run --all-files
