@@ -25,6 +25,11 @@ resource "google_sql_database_instance" "postgres" {
   }
 
   depends_on = [google_service_networking_connection.private_vpc_connection]
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "sleep 60"
+  }
 }
 
 # --- Database ---

@@ -34,5 +34,4 @@ resource "google_cloud_run_v2_service" "bastion" {
     }
   }
 
-  depends_on = [null_resource.docker_build_push]
 }

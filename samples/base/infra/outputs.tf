@@ -27,3 +27,8 @@ output "terraform_state_bucket" {
   description = "The GCS bucket name used for Terraform remote state"
   value       = "${var.project_id}-tfstate"
 }
+
+output "bastion_repo_name" {
+  description = "The Artifact Registry repository name for the bastion"
+  value       = module.artifact_registry_bastion.artifact_name
+}

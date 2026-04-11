@@ -13,6 +13,10 @@ terraform {
       source  = "hashicorp/null"
       version = ">= 3.0.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.11"
+    }
   }
   # Uncomment and configure for production use
   backend "gcs" {}

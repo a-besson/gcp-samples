@@ -20,6 +20,17 @@ module "artifact_registry_service" {
   description   = "Docker repository for cloudrun-simple-service"
 }
 
+module "artifact_registry_bastion" {
+  source  = "GoogleCloudPlatform/artifact-registry/google"
+  version = "~> 0.8"
+
+  project_id    = var.project_id
+  location      = var.region
+  repository_id = "cloudrun-bastion${var.name_suffix}"
+  format        = "DOCKER"
+  description   = "Docker repository for cloudrun-bastion"
+}
+
 # Container Scanning API ensures vulnerability scanning is active
 resource "google_project_service" "container_scanning" {
   project            = var.project_id

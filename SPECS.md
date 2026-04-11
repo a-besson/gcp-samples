@@ -4,6 +4,20 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-04-09] - Daily Log - Industrialisation du cycle de vie GCP : centralisation Artifact Registry, récupération DNS (Cloud Endpoints), fiabilisation Podman, et correction du cycle de destruction (Direct VPC Egress IP cleanup latency).
+
+### Décisions et Spécifications
+- **Centralisation des Registres (Standard Industriel)** : Migration de tous les dépôts Artifact Registry vers la pile foundational `base`. Cette décision élimine les conditions de course (Race Conditions) et les erreurs `409 Conflict` / `404 Not Found` en garantissant l'existence des dépôts avant tout build applicatif.
+- **Résilience DNS (Cloud Endpoints)** : Implémentation d'une tâche automatisée `undelete-dns` utilisant `gcloud endpoints services undelete`. Cette automatisation permet de contourner le verrou de 30 jours appliqué par GCP sur les services Endpoints supprimés, rendant le cycle de vie `destroy/apply` totalement idempotent.
+- **Résilience du Cycle de Destruction (Direct VPC Egress)** : Intégration d'une tâche d'attente déterministe `wait-for-serverless-cleanup` dans l'orchestrateur Task. Cette mesure pallie la latence de libération des IPs éphémères par GCP (`serverless-ipv4-*`), garantissant le succès de la suppression des sous-réseaux lors d'un `task destroy-all`.
+- **Pattern de Destruction Delay (Industrial Standard)** : Intégration d'un provisionneur `local-exec` effectuant un `sleep 60` lors de la destruction des instances Cloud SQL. Cette mesure de résilience garantit que GCP libère les routes de peering VPC avant que Terraform ne tente de supprimer la connexion `servicenetworking`, résolvant ainsi l'erreur structurelle `Producer services are still using this connection` (Error 9).
+- **Synchronisation du Nommage** : Généralisation de l'injection dynamique du suffixe d'environnement (`NAME_SUFFIX`) dans les variables `REPO_NAME` des Taskfiles. Alignement strict entre le nommage de l'infrastructure provisionnée et les cibles de l'orchestrateur de build.
+- **Découplage Build/Infra** : Suppression définitive des provisionneurs Terraform (`null_resource`) au sein des samples. La responsabilité de la construction et de la poussée des images est désormais déléguée exclusivement à l'orchestrateur Task, assurant une séparation propre des préoccupations.
+- **Refactorisation de la stack Bastion** : Transformation du bastion en composant purement applicatif consommant les registres centraux via les `remote_state` de la pile `base`.
+- **Fiabilisation de l'Authentification Container** : Standardisation de la connexion Podman via l'injection directe de jetons d'accès (`gcloud auth print-access-token`), résolvant les blocages intermittents constatés sur macOS avec les helpers de certificats natifs.
+
+---
+
 ## [2026-04-08] - Daily Log - Migration vers le Cloud SQL Auth Proxy (Standard Industriel), modernisation du Bastion (Debian Slim + Tinyproxy), suppression des composants legacy SOCKS5 et fiabilisation du Direct VPC Egress.
 
 ### Décisions et Spécifications

@@ -6,11 +6,12 @@ dotenv:
 
 vars:
   ENVIRONMENT: cloudrun-bastion
-  REPO_NAME: cloudrun-bastion
+  REPO_NAME: "cloudrun-bastion{{.TF_VAR_name_suffix | default \"\"}}"
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/bastion:latest"
   PROJECT_NUMBER: "{{.TF_VAR_project_number}}"
   NAME_SUFFIX: "{{.TF_VAR_name_suffix}}"
   IAP_USER_EMAIL: "{{.TF_VAR_iap_user_email}}"
+  ENDPOINT_SERVICE: "bastion{{.NAME_SUFFIX}}.endpoints.{{.PROJECT_ID}}.cloud.goog"
 
 tasks:
   default:
@@ -24,11 +25,12 @@ tasks:
       - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
       - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
       # Artifact Registry is also managed by TF, but we need it for the first build
-      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Bastion Repo" || true
+      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Bastion Repo" --project={{.PROJECT_ID}} || true
 
   build:
     desc: "Build and push the Docker image to Artifact Registry"
     dir: app
+    deps: [setup]
     cmds:
       - gcloud auth print-access-token | podman login -u oauth2accesstoken --password-stdin {{.REGION}}-docker.pkg.dev
       - podman build --platform linux/amd64 -t {{.IMAGE_NAME}} .
@@ -54,9 +56,14 @@ tasks:
   apply:
     desc: "Apply Terraform changes"
     dir: infra
-    deps: [init]
+    deps: [init, undelete-dns, build]
     cmds:
       - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+
+  undelete-dns:
+    desc: "Undelete the Cloud Endpoints service if it's in a soft-deleted state"
+    cmds:
+      - gcloud endpoints services undelete {{.ENDPOINT_SERVICE}} --project={{.PROJECT_ID}} 2>/dev/null || true
 
   destroy:
     desc: "Destroy Terraform resources"

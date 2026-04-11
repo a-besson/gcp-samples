@@ -47,15 +47,16 @@ tasks:
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-bastion", CMD: "apply" }
       - task: terraform-cmd
-        vars: { DIR: "samples/cloudrun-simple-job", CMD: "apply" }
+        vars: { DIR: "samples/cloudrun-job", CMD: "apply" }
       - task: terraform-cmd
-        vars: { DIR: "samples/cloudrun-simple-service", CMD: "apply" }
+        vars: { DIR: "samples/cloudrun-service", CMD: "apply" }
     parallel: true
 
   destroy-all:
     desc: "Détruit l'intégralité des ressources (services d'abord en parallèle, puis base à la fin)."
     cmds:
       - task: destroy-samples
+      - task: wait-for-serverless-cleanup
       - task: destroy-base
 
   destroy-base:
@@ -70,9 +71,9 @@ tasks:
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-bastion", CMD: "destroy" }
       - task: terraform-cmd
-        vars: { DIR: "samples/cloudrun-simple-job", CMD: "destroy" }
+        vars: { DIR: "samples/cloudrun-job", CMD: "destroy" }
       - task: terraform-cmd
-        vars: { DIR: "samples/cloudrun-simple-service", CMD: "destroy" }
+        vars: { DIR: "samples/cloudrun-service", CMD: "destroy" }
     parallel: true
 
   test-all:
@@ -83,15 +84,50 @@ tasks:
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-bastion", CMD: "test" }
       - task: terraform-cmd
-        vars: { DIR: "samples/cloudrun-simple-job", CMD: "test" }
+        vars: { DIR: "samples/cloudrun-job", CMD: "test" }
       - task: terraform-cmd
-        vars: { DIR: "samples/cloudrun-simple-service", CMD: "test" }
+        vars: { DIR: "samples/cloudrun-service", CMD: "test" }
     parallel: true
 
   terraform-cmd:
     internal: true
     cmds:
       - task --dir {{.DIR}} {{.CMD}}
+
+  wait-for-serverless-cleanup:
+    internal: true
+    cmds:
+      - |
+        echo "⏳ Waiting for Cloud Run ephemeral IP addresses (Direct VPC Egress) to be released..."
+        TIMEOUT=180
+        START_TIME=$(date +%s)
+        while true; do
+          # Try to list addresses with gcloud
+          ADDRESSES=$(gcloud compute addresses list --project ${PROJECT_ID} --filter="name ~ serverless-ipv4" --format="value(name)" 2>/dev/null || echo "GCLOUD_FAILED")
+          
+          if [ "$ADDRESSES" = "GCLOUD_FAILED" ]; then
+            echo "⚠️  gcloud command failed or not authenticated. Falling back to 60s sleep buffer."
+            sleep 60
+            break
+          fi
+
+          if [ -z "$ADDRESSES" ]; then
+            echo "✅ All ephemeral IPs released."
+            break
+          fi
+          
+          CURRENT_TIME=$(date +%s)
+          ELAPSED=$((CURRENT_TIME - START_TIME))
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "⚠️  Timeout reached while waiting for IP release. VPC destruction might still fail."
+            break
+          fi
+          
+          # Count addresses for display
+          COUNT=$(echo "$ADDRESSES" | wc -l | xargs)
+          echo "🔄 Still waiting for $COUNT IP(s) to be released... (elapsed: ${ELAPSED}s)"
+          sleep 10
+        done
 
   review:
     desc: "Exécute les contrôles de qualité (pre-commit) et déclenche une revue approfondie par l'agent IA."
