@@ -25,6 +25,7 @@ vars:
     - terraform-docs
     - gitleaks
     - libpq
+    - kubectl
   BREW_CASKS:
     - google-cloud-sdk
 
@@ -50,6 +51,8 @@ tasks:
         vars: { DIR: "samples/cloudrun-job", CMD: "apply" }
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-service", CMD: "apply" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/gke-base-sample", CMD: "apply" }
     parallel: true
 
   destroy-all:
@@ -74,6 +77,8 @@ tasks:
         vars: { DIR: "samples/cloudrun-job", CMD: "destroy" }
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-service", CMD: "destroy" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/gke-base-sample", CMD: "destroy" }
     parallel: true
 
   test-all:
@@ -87,6 +92,8 @@ tasks:
         vars: { DIR: "samples/cloudrun-job", CMD: "test" }
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-service", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/gke-base-sample", CMD: "test" }
     parallel: true
 
   terraform-cmd:

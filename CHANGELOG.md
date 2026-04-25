@@ -1,10 +1,31 @@
+
 # SPECS - Changelog & Décisions
 
 Ce fichier trace l'historique des choix d'architecture, des spécifications et des synthèses techniques par date.
 
 ---
 
+
+## [2026-04-25] - Daily Log - Résolution des erreurs de déploiement GKE et mise en conformité pre-commit (YAML multi-doc, TFLint).
+- **Résolution des erreurs de déploiement GKE** : correction du nom du cluster dans Taskfile et ajout de l'IP locale aux authorized networks.
+- **Conformité pre-commit** : mise à jour du hook `check-yaml` pour supporter les manifests multi-documents et suppression des déclarations Terraform inutilisées dans `iam.tf`.
+
+## [2026-04-19] - Daily Log - Création du sample GKE Autopilot privé avec service Nginx interne (ILB), NetworkPolicy, sécurité pod renforcée et accès kubectl sécurisé via IAP/Master Authorized Networks.
+
+### Décisions et Spécifications
+- **GKE Autopilot Private Cluster** : Déploiement via le module officiel `terraform-google-modules/kubernetes-engine//modules/beta-autopilot-private-cluster` (~v36.0). Cluster régional sur `subnet-priv-a` avec private nodes, pas d'IP publique sur les nœuds, control plane protégé par Master Authorized Networks (subnet-priv-a + plage IAP 35.235.240.0/20).
+- **Réseau** : Réutilisation de l'infrastructure base via `terraform_remote_state`. Pods alloués sur la plage secondaire existante `secondary-range` (100.64.0.0/22). Services auto-alloués par GKE. Control plane isolé sur 172.16.0.0/28.
+- **Nginx Internal Load Balancer** : Service Kubernetes de type `LoadBalancer` avec annotation `cloud.google.com/load-balancer-type: "Internal"`. L'IP privée est attribuée sur le subnet-priv-a, rendant le service inaccessible depuis le subnet-public et internet.
+- **NetworkPolicy** : Politique réseau restrictive limitant l'ingress nginx aux plages privées RFC 1918 (10.0.0.0/8) et RFC 6598 (100.64.0.0/10) uniquement.
+- **Sécurité Pod (Best Practices K8s)** : Image `nginxinc/nginx-unprivileged:1.27-alpine` (non-root UID 101), `readOnlyRootFilesystem`, profil `seccompProfile: RuntimeDefault`, `capabilities: drop ALL`, `automountServiceAccountToken: false`, resource requests/limits explicites.
+- **Accès kubectl sécurisé** : Deux méthodes documentées — (1) via IAP tunnel depuis une VM du subnet privé, (2) via réseau autorisé si l'IP source est whitelistée. Master global access activé pour permettre l'accès cross-region.
+- **Orchestration** : Taskfile v3 avec tâches `get-credentials`, `deploy-nginx`, `test-nginx`, `port-forward`, `undeploy-nginx` en complément du cycle Terraform standard (init/plan/apply/destroy).
+- **Tests IaC** : Tests plan-level validant le nommage du cluster, l'activation des APIs et la résolution des références réseau de la base.
+
+---
+
 ## [2026-04-09] - Daily Log - Industrialisation du cycle de vie GCP : centralisation Artifact Registry, récupération DNS (Cloud Endpoints), fiabilisation Podman, et correction du cycle de destruction (Direct VPC Egress IP cleanup latency).
+
 
 ### Décisions et Spécifications
 - **Centralisation des Registres (Standard Industriel)** : Migration de tous les dépôts Artifact Registry vers la pile foundational `base`. Cette décision élimine les conditions de course (Race Conditions) et les erreurs `409 Conflict` / `404 Not Found` en garantissant l'existence des dépôts avant tout build applicatif.

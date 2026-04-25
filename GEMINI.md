@@ -53,7 +53,7 @@ All skills in `.agents/skills/` define **HOW** to implement certain patterns. Re
 
 # SPECIFICATIONS
 
-IMPORTANT: Synthétise chaque échange que nous avons dans un fichier `SPECS.md` pour tracer les décisions et les choix.
+IMPORTANT: Synthétise chaque échange que nous avons dans un fichier `CHANGELOG.md` situé à la racine du projet pour tracer les décisions et les choix.
 
 Le fichier doit lister les synthèses par jour comme un changelog, en utilisant obligatoirement le format compressé suivant :
 

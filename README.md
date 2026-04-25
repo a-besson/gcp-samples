@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>A curated collection of industrial-grade Google Cloud Platform samples</strong><br/>
-  Terraform · Cloud Run · Security by Design · CI/CD
+  Terraform · Cloud Run · GKE · Security by Design · CI/CD
 </p>
 
 ---
@@ -77,6 +77,7 @@ gcloud config set project <YOUR_PROJECT_ID>
 | [cloudrun-simple-service](samples/cloudrun-simple-service/) | Service web Cloud Run Python déployé sur VPC privé avec Terraform. | [→ README](samples/cloudrun-simple-service/README.md) |
 | [cloudrun-simple-job](samples/cloudrun-simple-job/) | Job Cloud Run Python pour exécution de batchs asynchrones. | [→ README](samples/cloudrun-simple-job/README.md) |
 | [cloudrun-bastion](samples/cloudrun-bastion/) | Proxy SOCKS5 sur Cloud Run protégé par IAP via HTTPS Load Balancer avec Direct VPC Egress. | [→ README](samples/cloudrun-bastion/README.md) |
+| [gke-base-sample](samples/gke-base-sample/) | Cluster GKE Autopilot privé avec Nginx interne sur ILB et NetworkPolicy. | [→ README](samples/gke-base-sample/README.md) |
 
 ---
 
@@ -90,7 +91,8 @@ gcp-samples/
 ├── samples/          # GCP use-case samples
 │   ├── cloudrun-simple-service/
 │   ├── cloudrun-simple-job/
-│   └── cloudrun-bastion/
+│   ├── cloudrun-bastion/
+│   └── gke-base-sample/
 └── .pre-commit-config.yaml
 ```
 

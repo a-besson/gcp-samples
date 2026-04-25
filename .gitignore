@@ -34,3 +34,7 @@ skills-lock.json
 # Env/vars files
 .env
 terraform.tfvars
+
+# Maven
+**/target/
+.m2/

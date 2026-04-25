@@ -1,0 +1,135 @@
+# --- Namespace ---
+# Isolated namespace for the nginx workload
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-internal
+  labels:
+    app: nginx
+    env: dev
+---
+# --- Deployment ---
+# Nginx pod running on the private subnet with security best practices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-internal
+  namespace: nginx-internal
+  labels:
+    app: nginx
+    env: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        env: dev
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+              ephemeral-storage: 256Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+              ephemeral-storage: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+---
+# --- Service (Internal Load Balancer) ---
+# Exposes nginx on the private subnet only via an Internal TCP Load Balancer.
+# NOT accessible from the public subnet or the internet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-internal
+  namespace: nginx-internal
+  labels:
+    app: nginx
+    env: dev
+  annotations:
+    # Internal Load Balancer annotation - private subnet only
+    cloud.google.com/load-balancer-type: "Internal"
+    networking.gke.io/internal-load-balancer-allow-global-access: "false"
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+---
+# --- NetworkPolicy ---
+# Restricts ingress to nginx pods: only from within the private subnet (10.0.0.0/8)
+# Blocks any traffic from internet or public sources.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nginx-allow-internal-only
+  namespace: nginx-internal
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 8080

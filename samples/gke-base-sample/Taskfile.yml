@@ -1,0 +1,129 @@
+version: '3'
+
+dotenv:
+  - ../../.env
+
+vars:
+  CLUSTER_NAME: "gke-autopilot{{.TF_VAR_name_suffix}}"
+
+tasks:
+  default:
+    desc: "List available tasks"
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Create GCS state bucket (idempotent)"
+    cmds:
+      - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
+      - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
+
+  init:
+    desc: "Initialize Terraform with GCS backend"
+    dir: infra
+    cmds:
+      - |
+        terraform init \
+          -backend-config="bucket=${PROJECT_ID}-tfstate" \
+          -backend-config="prefix=gke-base-sample" \
+          -reconfigure {{.CLI_ARGS}}
+
+  plan:
+    desc: "Plan Terraform changes"
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform plan
+
+  apply:
+    desc: "Apply Terraform changes and deploy GKE Autopilot cluster"
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform apply --auto-approve
+
+  test:
+    desc: "Run Terraform tests"
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform test
+
+  destroy:
+    desc: "Destroy all GKE resources"
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform destroy --auto-approve
+
+  get-credentials:
+    desc: "Configure kubectl to connect to the GKE cluster"
+    cmds:
+      - |
+        gcloud container clusters get-credentials {{.CLUSTER_NAME}} \
+          --region {{.REGION}} \
+          --project {{.PROJECT_ID}}
+      - echo "✅ kubectl configured. Run 'kubectl get nodes' to verify."
+
+  deploy-nginx:
+    desc: "Deploy the internal nginx service to the GKE cluster"
+    deps: [get-credentials]
+    cmds:
+      - kubectl apply -f k8s/
+      - echo "⏳ Waiting for nginx pods to be ready..."
+      - kubectl wait --for=condition=ready pod -l app=nginx -n nginx-internal --timeout=120s
+      - kubectl get pods -n nginx-internal
+      - kubectl get svc -n nginx-internal
+
+  test-nginx:
+    desc: "Test nginx connectivity from within the cluster"
+    cmds:
+      - |
+        echo "🔍 Testing nginx from within the cluster..."
+        kubectl run curl-test --rm -it --restart=Never \
+          --image=curlimages/curl \
+          -n nginx-internal \
+          -- curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
+          http://nginx-internal.nginx-internal.svc.cluster.local
+
+  port-forward:
+    desc: "Open a secure local tunnel to nginx via kubectl port-forward"
+    cmds:
+      - |
+        echo "🔒 Forwarding local port 8080 → nginx-internal:80"
+        echo "   Access at: http://localhost:8080"
+        echo "   Press Ctrl+C to stop."
+        kubectl port-forward -n nginx-internal svc/nginx-internal 8080:80
+
+  undeploy-nginx:
+    desc: "Remove the nginx deployment from the cluster"
+    cmds:
+      - kubectl delete -f k8s/ --ignore-not-found
+
+  # ── Application Build ───────────────────────────────────
+
+  app-build:
+    desc: "Build the Java application (compile + unit tests)"
+    cmds:
+      - task --dir application build
+
+  app-test:
+    desc: "Run application unit tests"
+    cmds:
+      - task --dir application test
+
+  app-integration-test:
+    desc: "Run application integration tests (PostgreSQL/Podman)"
+    cmds:
+      - task --dir application integration-test
+
+  app-docker-build:
+    desc: "Build the application container image"
+    cmds:
+      - task --dir application docker-build
+
+  app-ci:
+    desc: "Full application CI pipeline (build + docker)"
+    cmds:
+      - task --dir application ci
+

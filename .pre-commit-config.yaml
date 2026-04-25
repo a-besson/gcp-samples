@@ -5,6 +5,7 @@ repos:
     hooks:
       - id: check-json
       - id: check-yaml
+        args: ["--allow-multiple-documents"]
       - id: check-added-large-files
         args: ["--maxkb=1000"]
       - id: detect-private-key
