@@ -85,12 +85,20 @@ gcloud config set project <YOUR_PROJECT_ID>
 
 ```text
 gcp-samples/
-├── .agents/          # AI agent configuration (skills, rules)
+├── AGENT.md              # Shared AI agent config (persona, rules, skills, standards)
+├── GEMINI.md             # LLM-specific instructions (Gemini CLI / Antigravity)
+├── CLAUDE.md             # LLM-specific instructions (Claude Code)
+├── .agents/              # Shared AI agent rules & skills (single source of truth)
+│   ├── rules/            # Mandatory rules (security, guidelines)
 │   └── skills/
-│       └── community/# Third-party and CLI-downloaded skills
-├── samples/          # GCP use-case samples
-│   ├── cloudrun-simple-service/
-│   ├── cloudrun-simple-job/
+│       ├── best-practice/ # Core engineering standards (Terraform, Taskfile, Pre-commit)
+│       ├── community/     # Third-party skills (Hashicorp, drawio)
+│       └── the-documentalist/ # Documentation standards
+├── .claude/rules/        # Symlinks → .agents/rules/ (Claude Code compatibility)
+├── samples/              # GCP use-case samples
+│   ├── base/
+│   ├── cloudrun-service/
+│   ├── cloudrun-job/
 │   ├── cloudrun-bastion/
 │   └── gke-base-sample/
 └── .pre-commit-config.yaml

@@ -18,7 +18,7 @@ provider "google" {
   region  = var.region
 
   default_labels = {
-    project    = "gke-base-sample"
+    project    = "gcp-samples_gke-base-sample"
     managed-by = "terraform"
     env        = "dev"
   }
@@ -29,7 +29,7 @@ provider "google-beta" {
   region  = var.region
 
   default_labels = {
-    project    = "gke-base-sample"
+    project    = "gcp-samples_gke-base-sample"
     managed-by = "terraform"
     env        = "dev"
   }

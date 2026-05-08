@@ -1,10 +1,10 @@
 # Common Infrastructure Standards
 
-Cette règle définit les fondations de base applicables à toutes les tâches de l'agent.
+Base standards applicable to all agent tasks in this repository.
 
-## Standards Industriels
+## Industrial Standards
 
-- **Priorité Absolue** : Toute action de l'agent doit d'abord être validée contre les fichiers de règles de `.agents/rules/morpheus-expert-devops/`.
-- **Zéro Placeholder** : Ne jamais proposer de code incomplet ou de placeholders.
-- **Sécurité par Design** : Toute ressource exposée doit être privée par défaut.
-- **Auto-documentation** : Toute création de code Terraform ou d'orchestration Task doit être accompagnée de sa documentation associée (TFDOCS.md, descriptions).
+- **Absolute Priority**: Every agent action must be validated against the rules in `.agents/rules/` and the skill `.agents/skills/best-practice/`.
+- **Zero Placeholder**: Never propose incomplete code or placeholders.
+- **Security by Design**: All exposed resources must be private by default.
+- **Auto-Documentation**: Every Terraform or Task orchestration code must include its associated documentation (TFDOCS.md, descriptions).

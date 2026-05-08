@@ -18,6 +18,10 @@ resource "google_sql_database_instance" "postgres" {
     # Low-cost tier suitable for testing
     tier = "db-f1-micro"
 
+    user_labels = {
+      role = "bastion-database"
+    }
+
     ip_configuration {
       ipv4_enabled    = true
       private_network = data.terraform_remote_state.base.outputs.network_self_link

@@ -13,7 +13,6 @@ module "lb_http" {
   ssl                             = true
   managed_ssl_certificate_domains = [local.domain]
   https_redirect                  = true
-  labels                          = { "env" = "dev", "managed-by" = "terraform" }
 
   backends = {
     bastion = {

@@ -25,4 +25,10 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  default_labels = {
+    project    = "gcp-samples_cloudrun-bastion"
+    managed-by = "terraform"
+    env        = "dev"
+  }
 }

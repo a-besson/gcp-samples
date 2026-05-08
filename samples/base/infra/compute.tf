@@ -28,8 +28,7 @@ resource "google_compute_instance" "test_vm_a" {
   machine_type = "e2-micro"
   zone         = "${var.region}-a"
 
-  tags   = ["dev"]
-  labels = { env = "dev" }
+  tags = ["dev"]
 
   boot_disk {
     initialize_params {
@@ -57,8 +56,7 @@ resource "google_compute_instance" "test_vm_b" {
   machine_type = "e2-micro"
   zone         = "${var.region}-b"
 
-  tags   = ["dev"]
-  labels = { env = "dev" }
+  tags = ["dev"]
 
   boot_disk {
     initialize_params {
@@ -86,8 +84,7 @@ resource "google_compute_instance" "test_vm_public" {
   machine_type = "e2-micro"
   zone         = "${var.region}-c"
 
-  tags   = ["dev"]
-  labels = { env = "dev" }
+  tags = ["dev"]
 
   boot_disk {
     initialize_params {

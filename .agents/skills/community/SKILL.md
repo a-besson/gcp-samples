@@ -3,22 +3,23 @@ name: Community Skills Orchestrator
 description: "Guidelines and index for third-party skills stored in the community folder."
 ---
 
-# 🌐 Community SKILLS Guidelines
+# 🌐 Community Skills Guidelines
 
-Ce skill agit comme un orchestrateur pour toutes les compétences tierces téléchargées via la CLI.
+This skill orchestrates all third-party skills downloaded via CLI.
 
-## 🔎 Visibilité des Skills
+## Skill Discovery
 
-L'agent **DOIT** impérativement scanner et parcourir l'intégralité des sous-répertoires de ce dossier (`.agents/skills/community/`) pour identifier et charger les compétences spécifiques disponibles avant toute intervention sur les domaines correspondants :
+The agent MUST scan all subdirectories of `.agents/skills/community/` to identify and load available skills before acting on the corresponding domains:
 
-- **Terraform Stacks** : voir [terraform-stacks/SKILL.md](./terraform-stacks/SKILL.md)
-- **Terraform Test** : voir [terraform-test/SKILL.md](./terraform-test/SKILL.md)
-- **Style Guide** : voir [terraform-style-guide/SKILL.md](./terraform-style-guide/SKILL.md)
-- **Provider Actions** : voir [provider-actions/SKILL.md](./provider-actions/SKILL.md)
-- **Refactor Module** : voir [refactor-module/SKILL.md](./refactor-module/SKILL.md)
-- **Provider Resources** : voir [provider-resources/SKILL.md](./provider-resources/SKILL.md)
-- **New Provider Creation** : voir [new-terraform-provider/SKILL.md](./new-terraform-provider/SKILL.md)
+- **Draw.io Diagrams**: see [drawio/SKILL.md](./drawio/SKILL.md)
+- **Terraform Stacks**: see [terraform-stacks/SKILL.md](./terraform-stacks/SKILL.md)
+- **Terraform Test**: see [terraform-test/SKILL.md](./terraform-test/SKILL.md)
+- **Style Guide**: see [terraform-style-guide/SKILL.md](./terraform-style-guide/SKILL.md)
+- **Provider Actions**: see [provider-actions/SKILL.md](./provider-actions/SKILL.md)
+- **Refactor Module**: see [refactor-module/SKILL.md](./refactor-module/SKILL.md)
+- **Provider Resources**: see [provider-resources/SKILL.md](./provider-resources/SKILL.md)
+- **New Provider Creation**: see [new-terraform-provider/SKILL.md](./new-terraform-provider/SKILL.md)
 
-## ⚖️ Priorité
+## Priority
 
-Toutes les compétences identifiées ici sont soumises à l'autorité du **Master Prompt Morpheus**. En cas de conflit technique ou comportemental, les règles situées dans `.agents/rules/morpheus-expert-devops/` prévalent.
+All skills listed here are subject to the authority of the **best-practice** skill. In case of technical or behavioral conflict, rules in `.agents/skills/best-practice/` prevail.

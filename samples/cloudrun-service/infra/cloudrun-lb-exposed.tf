@@ -11,7 +11,6 @@ module "lb_http" {
 
   ssl            = false
   https_redirect = false
-  labels         = { "env" = "dev", "managed-by" = "terraform" }
 
   backends = {
     default = {

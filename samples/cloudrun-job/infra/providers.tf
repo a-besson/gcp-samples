@@ -14,4 +14,10 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  default_labels = {
+    project    = "gcp-samples_cloudrun-job"
+    managed-by = "terraform"
+    env        = "dev"
+  }
 }

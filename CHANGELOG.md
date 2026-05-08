@@ -5,6 +5,25 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-05-08] - Daily Log - Refactoring de la configuration IA : compatibilité multi-agent (Claude Code + Gemini), rename morpheus→best-practice, optimisation des tokens et unification de l'architecture .agents/
+
+- **Création de `AGENT.md`** : Extraction de la configuration commune (persona, tech stack, rules, skills, coding standards, labeling, workflow, changelog, finops, documentation) dans un fichier partagé `AGENT.md`. `GEMINI.md` (85→15 lignes) et `CLAUDE.md` (85→13 lignes) ne contiennent plus que les instructions spécifiques au LLM (syntaxe d'import, formatting).
+
+- **Compatibilité Claude Code** : Création de `CLAUDE.md` avec imports `@` vers `.agents/` et `.claude/rules/` en symlinks pour partager une source de vérité unique.
+- **Rename morpheus-expert-devops → best-practice** : Suppression de la persona "Morpheus", adoption d'un ton neutre et professionnel. Renommage du dossier et des fichiers internes (`morpheus-*.md` → `*.md`).
+- **Optimisation GEMINI.md** : Suppression du contenu dupliqué (Terraform best practices, Documentation déjà dans les skills). Réduction de ~118 à ~70 lignes.
+- **Séparation drawio** : Déplacement du skill drawio de `best-practice/` vers `community/` (skill tiers, pas un standard interne).
+- **Correction common.md** : Chemin obsolète `.agents/rules/morpheus-expert-devops/` corrigé vers `.agents/skills/best-practice/`.
+- **Fix guidelines.md** : Double frontmatter YAML nettoyé.
+- **Traduction EN** : Tous les skills et rules traduits en anglais pour cohérence multi-agent.
+- **Architecture cible** : `GEMINI.md` et `CLAUDE.md` servent de dispatcher vers `.agents/` (source unique), `.claude/rules/` symlinks vers `.agents/rules/`.
+- **Gouvernance & Audit de Labeling GCP** : Réalisation d'un audit de labellisation complet et création de la gouvernance de labeling industrielle (`gcp_labels_audit_governance.md`).
+- **Alignement du Code de Labellisation** :
+  - Ajout des blocs `default_labels` aux providers Google de `samples/cloudrun-job` et `samples/cloudrun-bastion` pour garantir la conformité FinOps par défaut.
+  - Suppression de l'ensemble des labels redondants ou surchargés manuellement au niveau des ressources dans `samples/base` (VMs de test) et `samples/cloudrun-service` (Global Load Balancer).
+  - Ajout du bloc conforme `user_labels` de traçabilité sur l'instance de base de données Cloud SQL de `samples/cloudrun-bastion`.
+  - Nettoyage et formatage du HCL via `pre-commit` (checks de validation 100% au vert).
+
 
 ## [2026-04-25] - Daily Log - Résolution des erreurs de déploiement GKE et mise en conformité pre-commit (YAML multi-doc, TFLint).
 - **Résolution des erreurs de déploiement GKE** : correction du nom du cluster dans Taskfile et ajout de l'IP locale aux authorized networks.

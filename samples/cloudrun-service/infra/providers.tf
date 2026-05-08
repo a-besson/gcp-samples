@@ -18,7 +18,7 @@ provider "google" {
   region  = var.region
 
   default_labels = {
-    project    = "cloudrun-ssl-service"
+    project    = "gcp-samples_cloudrun-ssl-service"
     managed-by = "terraform"
     env        = "dev"
   }
@@ -29,7 +29,7 @@ provider "google-beta" {
   region  = var.region
 
   default_labels = {
-    project    = "cloudrun-ssl-service"
+    project    = "gcp-samples_cloudrun-ssl-service"
     managed-by = "terraform"
     env        = "dev"
   }
