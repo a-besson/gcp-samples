@@ -5,6 +5,10 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-05-08] - Daily Log - Intégration du sample gce-g2-gpu-instance + refactoring de la configuration IA
+
+- **Nouveau sample `gce-g2-gpu-instance`** : Intégration et mise au standard du sample GCE G2 GPU (NVIDIA L4) pour exécuter des LLMs via Ollama. Architecture Security by Design : instance privée (pas d'IP publique), accès SSH et API via tunnel IAP, Cloud NAT pour la sortie Internet, scheduler start/stop automatisé. Restructuration vers `infra/` + `Taskfile.yml` standard, `default_labels` GCP, GCS backend, validations variables, et `.pre-commit-config.yaml`.
+
 ## [2026-05-08] - Daily Log - Refactoring de la configuration IA : compatibilité multi-agent (Claude Code + Gemini), rename morpheus→best-practice, optimisation des tokens et unification de l'architecture .agents/
 
 - **Création de `AGENT.md`** : Extraction de la configuration commune (persona, tech stack, rules, skills, coding standards, labeling, workflow, changelog, finops, documentation) dans un fichier partagé `AGENT.md`. `GEMINI.md` (85→15 lignes) et `CLAUDE.md` (85→13 lignes) ne contiennent plus que les instructions spécifiques au LLM (syntaxe d'import, formatting).

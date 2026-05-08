@@ -1,0 +1,72 @@
+version: '3'
+
+dotenv:
+  - ../../.env
+
+vars:
+  ENVIRONMENT: gce-g2-gpu-instance
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Create the initial GCS bucket for remote state (Prerequisite: gcloud authenticated)"
+    cmds:
+      - |
+        BUCKET_NAME="${PROJECT_ID}-tfstate";
+        if ! gcloud storage buckets describe gs://${BUCKET_NAME} --project ${PROJECT_ID} > /dev/null 2>&1; then
+          echo "Creating bucket gs://${BUCKET_NAME}...";
+          gcloud storage buckets create gs://${BUCKET_NAME} --project ${PROJECT_ID} --location ${REGION} --uniform-bucket-level-access;
+          gcloud storage buckets update gs://${BUCKET_NAME} --versioning;
+        else
+          echo "Bucket gs://${BUCKET_NAME} already exists.";
+        fi
+
+  init:
+    desc: Initialize Terraform with dynamic GCS backend
+    dir: infra
+    cmds:
+      - |
+        terraform init \
+          -backend-config="bucket=${PROJECT_ID}-tfstate" \
+          -backend-config="prefix=gce-g2-gpu-instance" \
+          -reconfigure {{.CLI_ARGS}}
+
+  plan:
+    desc: Plan Terraform changes
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform plan -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+
+  apply:
+    desc: Apply Terraform changes (deploy the GPU instance)
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform apply --auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+
+  destroy:
+    desc: Destroy Terraform resources
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform destroy --auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+
+  ssh:
+    desc: "Connect to the instance via IAP SSH"
+    cmds:
+      - gcloud compute ssh gemma-node --project ${PROJECT_ID} --zone ${ZONE:-europe-west4-a} --tunnel-through-iap
+
+  tunnel:
+    desc: "Open a secure IAP tunnel to the Ollama API on localhost:11434"
+    cmds:
+      - gcloud compute start-iap-tunnel gemma-node 11434 --project ${PROJECT_ID} --zone ${ZONE:-europe-west4-a} --local-host-port=localhost:11434
+
+  review:
+    desc: Run pre-commit hooks on all files
+    cmds:
+      - pre-commit run --all-files

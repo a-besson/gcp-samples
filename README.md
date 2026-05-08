@@ -78,6 +78,7 @@ gcloud config set project <YOUR_PROJECT_ID>
 | [cloudrun-simple-job](samples/cloudrun-simple-job/) | Job Cloud Run Python pour exécution de batchs asynchrones. | [→ README](samples/cloudrun-simple-job/README.md) |
 | [cloudrun-bastion](samples/cloudrun-bastion/) | Proxy SOCKS5 sur Cloud Run protégé par IAP via HTTPS Load Balancer avec Direct VPC Egress. | [→ README](samples/cloudrun-bastion/README.md) |
 | [gke-base-sample](samples/gke-base-sample/) | Cluster GKE Autopilot privé avec Nginx interne sur ILB et NetworkPolicy. | [→ README](samples/gke-base-sample/README.md) |
+| [gce-g2-gpu-instance](samples/gce-g2-gpu-instance/) | Instance GCE G2 avec GPU NVIDIA L4 pour exécuter des LLMs (Gemma/Ollama) via tunnel IAP privé. | [→ README](samples/gce-g2-gpu-instance/README.md) |
 
 ---
 
