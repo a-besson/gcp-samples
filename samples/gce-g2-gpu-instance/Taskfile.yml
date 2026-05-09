@@ -70,3 +70,14 @@ tasks:
     desc: Run pre-commit hooks on all files
     cmds:
       - pre-commit run --all-files
+
+  chat:
+    desc: Effectue une requête test au LLM via le tunnel local (GCP)
+    cmds:
+      - |
+        curl -X POST http://localhost:11434/api/generate \
+        -d '{
+          "model": "gemma4:26b",
+          "prompt": "Bonjour Gemma 4, peux-tu te présenter en tant qu expert DevOps ?",
+          "stream": false
+        }'
