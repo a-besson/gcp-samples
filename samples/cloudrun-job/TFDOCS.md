@@ -37,6 +37,7 @@
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_image_job"></a> [image\_job](#input\_image\_job) | Docker image for the Cloud Run Job | `string` | n/a | yes |
+| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for the resource names (e.g. -dev or -test). | `string` | `"-sample"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The Google Cloud Project ID | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The GCP region to deploy resources in | `string` | `"europe-west1"` | no |
 

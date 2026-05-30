@@ -71,7 +71,7 @@ module "firewall_rules" {
   rules = [
     {
       name          = "allow-iap-ssh${var.name_suffix}"
-      description   = "Allow SSH from IAP"
+      description   = "Allow SSH from IAP tunnel only (no public SSH)"
       direction     = "INGRESS"
       source_ranges = ["35.235.240.0/20"]
       target_tags   = []
@@ -84,7 +84,7 @@ module "firewall_rules" {
     },
     {
       name          = "allow-internal${var.name_suffix}"
-      description   = "Allow internal traffic between subnets"
+      description   = "Allow minimal internal traffic between subnets (least-privilege)"
       direction     = "INGRESS"
       source_ranges = ["10.0.0.0/8"]
       target_tags   = []
@@ -94,11 +94,14 @@ module "firewall_rules" {
         },
         {
           protocol = "tcp"
-          ports    = ["0-65535"]
-        },
-        {
-          protocol = "udp"
-          ports    = ["0-65535"]
+          # Explicitly enumerate required ports only:
+          #   22    — SSH (IAP backup path)
+          #   443   — HTTPS (internal service calls, Private Google Access)
+          #   5432  — PostgreSQL (Cloud SQL Auth Proxy to Cloud SQL via VPC peering)
+          #   8080  — App/service default port
+          #   8443  — App/service TLS port
+          #   9090  — Cloud SQL Auth Proxy health check endpoint
+          ports = ["22", "443", "5432", "8080", "8443", "9090"]
         }
       ]
     }

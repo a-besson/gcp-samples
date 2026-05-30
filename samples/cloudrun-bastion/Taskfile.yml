@@ -5,13 +5,19 @@ dotenv:
 
 
 vars:
+  NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
+  SA_IAC: "sa-iac{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
   ENVIRONMENT: cloudrun-bastion
-  REPO_NAME: "cloudrun-bastion{{.TF_VAR_name_suffix | default \"\"}}"
+  REPO_NAME: "cloudrun-bastion{{.NAME_SUFFIX}}"
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/bastion:latest"
   PROJECT_NUMBER: "{{.TF_VAR_project_number}}"
-  NAME_SUFFIX: "{{.TF_VAR_name_suffix}}"
   IAP_USER_EMAIL: "{{.TF_VAR_iap_user_email}}"
   ENDPOINT_SERVICE: "bastion{{.NAME_SUFFIX}}.endpoints.{{.PROJECT_ID}}.cloud.goog"
+
+env:
+  GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
+  CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
+  TF_VAR_name_suffix: "{{.NAME_SUFFIX}}"
 
 tasks:
   default:

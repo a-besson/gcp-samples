@@ -5,9 +5,15 @@ dotenv:
 
 
 vars:
-  REPO_NAME: "cloudrun-simple-service{{.TF_VAR_name_suffix | default \"\"}}"
-    # Fix the service image if it was pointing to 'app' but the job uses 'job'
+  NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
+  SA_IAC: "sa-iac{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
+  REPO_NAME: "cloudrun-simple-service{{.NAME_SUFFIX}}"
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/service:latest"
+
+env:
+  GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
+  CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
+  TF_VAR_name_suffix: "{{.NAME_SUFFIX}}"
 
 tasks:
   default:

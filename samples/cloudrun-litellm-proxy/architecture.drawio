@@ -1,0 +1,129 @@
+<mxfile host="65bd71144e">
+    <diagram id="cloudrun-litellm-architecture" name="LiteLLM Cloud Run Architecture">
+        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                
+                <!-- Google Cloud Project Container -->
+                <mxCell id="gcp-project" value="Google Cloud Project" style="swimlane;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#4285F4;strokeWidth=2;fontSize=14;fontStyle=1;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="40" width="820" height="660" as="geometry"/>
+                </mxCell>
+                
+                <!-- Client (External) -->
+                <mxCell id="client" value="Client Application&#xa;(Claude Code, OpenAI SDK, etc.)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#607D8B;strokeWidth=2;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="270" width="160" height="80" as="geometry"/>
+                </mxCell>
+                
+                <!-- VPC Network -->
+                <mxCell id="vpc" value="Virtual Private Cloud (VPC)" style="swimlane;whiteSpace=wrap;html=1;dashed=0;fillColor=#E8F0FE;strokeColor=#1A73E8;strokeWidth=2;align=left;spacingLeft=10;" parent="gcp-project" vertex="1">
+                    <mxGeometry x="40" y="220" width="460" height="400" as="geometry"/>
+                </mxCell>
+                
+                <!-- Public Subnet -->
+                <mxCell id="subnet" value="Public Subnet (Direct VPC Egress)" style="swimlane;whiteSpace=wrap;html=1;dashed=1;fillColor=#E8F5E9;strokeColor=#34A853;strokeWidth=2;align=left;spacingLeft=10;" parent="vpc" vertex="1">
+                    <mxGeometry x="20" y="40" width="420" height="340" as="geometry"/>
+                </mxCell>
+                
+                <!-- Cloud Run Sandbox -->
+                <mxCell id="cloudrun" value="Cloud Run: litellm-proxy-sample" style="swimlane;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#8BC34A;strokeWidth=2;align=left;spacingLeft=10;" parent="subnet" vertex="1">
+                    <mxGeometry x="20" y="40" width="380" height="280" as="geometry"/>
+                </mxCell>
+                
+                <!-- LiteLLM Container -->
+                <mxCell id="container-litellm" value="&lt;b&gt;litellm&lt;/b&gt;&#xa;(Port 4000)&#xa;LiteLLM Proxy Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#FBC02D;strokeWidth=2;" parent="cloudrun" vertex="1">
+                    <mxGeometry x="20" y="60" width="140" height="80" as="geometry"/>
+                </mxCell>
+                
+                <!-- Cloud SQL Proxy Sidecar -->
+                <mxCell id="container-proxy" value="&lt;b&gt;cloud-sql-proxy&lt;/b&gt;&#xa;(Port 5432 / 9090)&#xa;Auth Proxy Sidecar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#FB8C00;strokeWidth=2;" parent="cloudrun" vertex="1">
+                    <mxGeometry x="220" y="60" width="140" height="80" as="geometry"/>
+                </mxCell>
+                
+                <!-- Shared Network Namespace (localhost) -->
+                <mxCell id="shared-net" value="Shared Network Namespace (localhost:5432)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" parent="cloudrun" vertex="1">
+                    <mxGeometry x="60" y="150" width="260" height="30" as="geometry"/>
+                </mxCell>
+                
+                <!-- Cloud SQL Instance -->
+                <mxCell id="cloudsql" value="&lt;b&gt;Cloud SQL Instance&lt;/b&gt;&#xa;Postgres 15&#xa;(Private IP Only)" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;whiteSpace=wrap;html=1;fillColor=#E8F0FE;strokeColor=#4285F4;strokeWidth=2;" parent="gcp-project" vertex="1">
+                    <mxGeometry x="110" y="500" width="120" height="100" as="geometry"/>
+                </mxCell>
+                
+                <!-- Google Services (Outside VPC) -->
+                <!-- Vertex AI -->
+                <mxCell id="vertex" value="&lt;b&gt;Vertex AI API&lt;/b&gt;&#xa;(Gemini, Claude, Gemma)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#03A9F4;strokeWidth=2;" parent="gcp-project" vertex="1">
+                    <mxGeometry x="580" y="260" width="180" height="70" as="geometry"/>
+                </mxCell>
+                
+                <!-- Secret Manager -->
+                <mxCell id="secrets" value="&lt;b&gt;Secret Manager&lt;/b&gt;&#xa;LITELLM_MASTER_KEY&#xa;DATABASE_URL" style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#ECEFF1;strokeColor=#607D8B;strokeWidth=2;" parent="gcp-project" vertex="1">
+                    <mxGeometry x="580" y="80" width="180" height="90" as="geometry"/>
+                </mxCell>
+                
+                <!-- BigQuery -->
+                <mxCell id="bigquery" value="&lt;b&gt;BigQuery Observability&lt;/b&gt;&#xa;litellm_observability.logs" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=15;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#607D8B;strokeWidth=2;" parent="gcp-project" vertex="1">
+                    <mxGeometry x="580" y="420" width="180" height="90" as="geometry"/>
+                </mxCell>
+                
+                <!-- Cloud Monitoring -->
+                <mxCell id="monitoring" value="&lt;b&gt;Cloud Monitoring&lt;/b&gt;&#xa;Dashboard &amp; Metrics" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#ECEFF1;strokeColor=#607D8B;strokeWidth=2;" parent="gcp-project" vertex="1">
+                    <mxGeometry x="580" y="550" width="180" height="80" as="geometry"/>
+                </mxCell>
+                
+                <!-- Connectors & Flows -->
+                <!-- Client to Cloud Run (via GFE) -->
+                <mxCell id="flow-client-gfe" value="HTTPS + x-api-key: Bearer sk-..." style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EA4335;strokeWidth=2;fontSize=11;" parent="1" source="client" target="container-litellm" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="210 y">
+                            <mxPoint x="210" y="310"/>
+                            <mxPoint x="210" y="360"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                
+                <!-- LiteLLM to Cloud SQL Proxy -->
+                <mxCell id="flow-litellm-proxy" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4285F4;strokeWidth=2;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="cloudrun" source="container-litellm" target="container-proxy" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="180 100"/>
+                    </mxGeometry>
+                </mxCell>
+                
+                <!-- Cloud SQL Proxy to Database (VPC Peering) -->
+                <mxCell id="flow-proxy-db" value="Postgres Connection&#xa;(VPC Peering / Private IP)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#34A853;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=1;fontSize=10;" parent="gcp-project" source="container-proxy" target="cloudsql" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="330 380"/>
+                    </mxGeometry>
+                </mxCell>
+                
+                <!-- LiteLLM to Secret Manager (Dynamic resolution) -->
+                <mxCell id="flow-secrets" value="Resolve secrets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FF9900;strokeWidth=1;dashed=1;" parent="gcp-project" source="container-litellm" target="secrets" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="130 125"/>
+                    </mxGeometry>
+                </mxCell>
+                
+                <!-- LiteLLM to Vertex AI (Direct VPC Egress) -->
+                <mxCell id="flow-vertex" value="API Calls (Private Ranges Egress)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#4285F4;strokeWidth=2;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=11;" parent="gcp-project" source="container-litellm" target="vertex" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="130 180"/>
+                    </mxGeometry>
+                </mxCell>
+                
+                <!-- LiteLLM to BigQuery -->
+                <mxCell id="flow-bq" value="Log Spend &amp; Tokens" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#990099;strokeWidth=1;dashed=1;fontSize=10;" parent="gcp-project" source="container-litellm" target="bigquery" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="130 465"/>
+                    </mxGeometry>
+                </mxCell>
+                
+                <!-- LiteLLM to Monitoring -->
+                <mxCell id="flow-monitoring" value="Write Metrics" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#009999;strokeWidth=1;dashed=1;fontSize=10;" parent="gcp-project" source="container-litellm" target="monitoring" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array points="130 590"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

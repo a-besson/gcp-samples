@@ -72,6 +72,7 @@ Ce projet déploie une instance GCE (G2 + NVIDIA L4) sécurisée pour l'héberge
 | <a name="input_gpu_type"></a> [gpu\_type](#input\_gpu\_type) | GPU Type | `string` | `"nvidia-l4"` | no |
 | <a name="input_is_spot"></a> [is\_spot](#input\_is\_spot) | Whether to use Spot instance for cost reduction | `bool` | `false` | no |
 | <a name="input_machine_type"></a> [machine\_type](#input\_machine\_type) | GCE Machine Type (G2 series for L4 GPU) | `string` | `"g2-standard-8"` | no |
+| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for the resource names (e.g. -dev or -test). | `string` | `"-sample"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | GCP Project ID | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | GCP Region (Default to Netherlands as L4 is more available there) | `string` | `"europe-west4"` | no |
 | <a name="input_zone"></a> [zone](#input\_zone) | GCP Zone | `string` | `"europe-west4-a"` | no |

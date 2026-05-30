@@ -59,6 +59,21 @@ run "validate_services" {
     condition     = google_project_service.container_scanning.service == "containerscanning.googleapis.com"
     error_message = "Container scanning service ID did not match"
   }
+
+  assert {
+    condition     = google_project_service.artifact_registry.service == "artifactregistry.googleapis.com"
+    error_message = "Artifact Registry service ID did not match"
+  }
+
+  assert {
+    condition     = google_project_service.compute.service == "compute.googleapis.com"
+    error_message = "Compute service ID did not match"
+  }
+
+  assert {
+    condition     = google_project_service.iam.service == "iam.googleapis.com"
+    error_message = "IAM service ID did not match"
+  }
 }
 
 run "validate_apply" {
@@ -113,7 +128,7 @@ run "validate_compute_test_vms" {
   }
 
   assert {
-    condition     = google_compute_instance.test_vm_public.labels.env == "dev"
+    condition     = google_compute_instance.test_vm_public.effective_labels.env == "dev"
     error_message = "Test VM Public does not have the 'env=dev' label"
   }
 

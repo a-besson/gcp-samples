@@ -1,0 +1,92 @@
+# LiteLLM proxy config — OpenAI-compatible front, Vertex AI back.
+# Auth: callers send `Authorization: Bearer <virtual-key>` (sk-...).
+# Virtual Keys are managed by LiteLLM against the Postgres DATABASE_URL.
+#
+# Inference regions:
+#   Gemini + Claude → "eu" (EU multi-region, routes to nearest EU datacenter)
+#   Gemma           → europe-west4 (Vertex AI Model Garden GPU endpoint)
+
+model_list:
+  # ─── Gemini — EU multi-region ──────────────────────────────────────────────
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: vertex_ai/gemini-2.5-pro
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: os.environ/VERTEXAI_LOCATION
+      stream: true
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: vertex_ai/gemini-2.5-flash
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: os.environ/VERTEXAI_LOCATION
+      stream: true
+
+  # ─── Claude / Anthropic via Vertex AI — EU multi-region ────────────────────
+  # Claude 4.6+ models use dateless IDs (no @date suffix).
+  # EU multi-region endpoint pools capacity across EU regions.
+  - model_name: claude-opus-4-7
+    litellm_params:
+      model: vertex_ai/claude-opus-4-7
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: os.environ/VERTEXAI_LOCATION
+      stream: true
+
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: vertex_ai/claude-opus-4-6
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: os.environ/VERTEXAI_LOCATION
+      stream: true
+
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: vertex_ai/claude-sonnet-4-6
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: os.environ/VERTEXAI_LOCATION
+      stream: true
+
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: vertex_ai/claude-haiku-4-5
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: os.environ/VERTEXAI_LOCATION
+      stream: true
+
+  # ─── Gemma 3 — Vertex AI Model Garden (europe-west4) ───────────────────────
+  # Model Garden IDs: google/gemma3@gemma-3-1b-it, google/gemma3@gemma-3-27b-it
+  # Requires Model Garden access in europe-west4. If serverless is unavailable,
+  # deploy via Model Garden and replace the model ID with:
+  #   model: vertex_ai/<ENDPOINT_ID>
+  #   api_base: https://<ENDPOINT_ID>.europe-west4-<PROJECT>.prediction.vertexai.goog
+  - model_name: gemma-3-1b
+    litellm_params:
+      model: vertex_ai/google/gemma3@gemma-3-1b-it
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west4
+      stream: true
+
+  - model_name: gemma-3-27b
+    litellm_params:
+      model: vertex_ai/google/gemma3@gemma-3-27b-it
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west4
+      stream: true
+
+litellm_settings:
+  success_callback: ["bigquery"]
+  cache: true
+  cache_params:
+    type: local
+  drop_params: true
+  num_retries: 2
+  request_timeout: 60
+  telemetry: false
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: false
+  json_logs: true
+  disable_spend_logs: false
+  litellm_key_header_name: "x-api-key"

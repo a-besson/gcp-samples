@@ -32,3 +32,8 @@ output "bastion_repo_name" {
   description = "The Artifact Registry repository name for the bastion"
   value       = module.artifact_registry_bastion.artifact_name
 }
+
+output "iac_sa_email" {
+  description = "IaC Service Account email used for deployments."
+  value       = google_service_account.iac.email
+}

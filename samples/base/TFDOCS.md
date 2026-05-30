@@ -34,17 +34,25 @@
 | [google_compute_instance.test_vm_b](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance) | resource |
 | [google_compute_instance.test_vm_public](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance) | resource |
 | [google_compute_router.router](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router) | resource |
+| [google_project_iam_member.iac_editor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
+| [google_project_iam_member.iac_iam_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
+| [google_project_iam_member.iac_secret_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
+| [google_project_iam_member.iac_storage_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.test_vm_logging](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.test_vm_monitoring](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.test_vm_storage](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
+| [google_project_service.artifact_registry](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
+| [google_project_service.compute](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_project_service.container_scanning](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
+| [google_project_service.iam](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
+| [google_service_account.iac](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.test_vm_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for resource names (used in tests to avoid naming conflicts). | `string` | `""` | no |
+| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for resource names (used in tests to avoid naming conflicts). | `string` | `"-sample"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The GCP Project ID where the VPC will be created. | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The region where subnets will be deployed. | `string` | `"europe-west9"` | no |
 | <a name="input_subnet_priv_a_ip"></a> [subnet\_priv\_a\_ip](#input\_subnet\_priv\_a\_ip) | IP range for the first private subnet. | `string` | `"10.0.4.0/22"` | no |
@@ -61,6 +69,7 @@
 | Name | Description |
 | ---- | ----------- |
 | <a name="output_bastion_repo_name"></a> [bastion\_repo\_name](#output\_bastion\_repo\_name) | The Artifact Registry repository name for the bastion |
+| <a name="output_iac_sa_email"></a> [iac\_sa\_email](#output\_iac\_sa\_email) | IaC Service Account email used for deployments. |
 | <a name="output_network_name"></a> [network\_name](#output\_network\_name) | The name of the VPC being created |
 | <a name="output_network_self_link"></a> [network\_self\_link](#output\_network\_self\_link) | The URI of the VPC being created |
 | <a name="output_subnet_priv_a"></a> [subnet\_priv\_a](#output\_subnet\_priv\_a) | private subnet A details |

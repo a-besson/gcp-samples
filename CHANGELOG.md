@@ -5,6 +5,13 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-05-25] - Daily Log - Fix `samples/base` apply error and testing improvements
+
+- **Résolution du bug `samples/base`** : Suppression de l'impersonation circulaire dans `providers.tf` (le module de fondation ne peut pas s'auto-impersonner avant d'exister). Ajout de l'activation automatique des APIs critiques (`artifactregistry.googleapis.com`, `compute.googleapis.com`, `iam.googleapis.com`) avec `depends_on` dans les modules. Correction de `sa-iac.tf` pour utiliser `name_suffix` et éviter les conflits 409 lors des tests parallèles. Mise à jour de `unit.tftest.hcl` pour valider les nouveaux services et utiliser `effective_labels` (compatible avec `default_labels` provider).
+- **Standardisation Pre-commit** : Mise à jour de `samples/base/.pre-commit-config.yaml` pour autoriser les documents YAML multiples, alignant le comportement sur la racine du projet et permettant la validation des manifestes Kubernetes.
+
+- **Nouveau sample `litellm-proxy-cloudrun`** : Passerelle OpenAI-compatible LiteLLM déployée sur Cloud Run (v2) pour exposer Vertex AI (Gemini 2.5 pro/flash, Claude Sonnet 4.6 via Vertex). Topologie « lean » sans Redis : cache mémoire LiteLLM, `min_instances=1` + CPU-always-allocated, Direct VPC Egress vers le `base` VPC en `PRIVATE_RANGES_ONLY`. Sécurité à deux niveaux : IAM `roles/run.invoker` (Identity Token) + `LITELLM_MASTER_KEY` en Secret Manager (seed manuel via `task seed-key`). SA runtime au moindre privilège (`aiplatform.user`, `logging.logWriter`, `monitoring.metricWriter`, `secretmanager.secretAccessor`). Taskfile standard (`setup`, `seed-key`, `build`, `init`, `plan`, `apply`, `smoke`, `destroy`). Décisions différées documentées : Memorystore, Virtual Keys (Postgres), domaine custom.
+
 ## [2026-05-08] - Daily Log - Intégration du sample gce-g2-gpu-instance + refactoring de la configuration IA
 
 - **Nouveau sample `gce-g2-gpu-instance`** : Intégration et mise au standard du sample GCE G2 GPU (NVIDIA L4) pour exécuter des LLMs via Ollama. Architecture Security by Design : instance privée (pas d'IP publique), accès SSH et API via tunnel IAP, Cloud NAT pour la sortie Internet, scheduler start/stop automatisé. Restructuration vers `infra/` + `Taskfile.yml` standard, `default_labels` GCP, GCS backend, validations variables, et `.pre-commit-config.yaml`.

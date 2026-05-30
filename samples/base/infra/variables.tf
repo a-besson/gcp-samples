@@ -62,5 +62,5 @@ variable "subnet_priv_b_secondary_ip" {
 variable "name_suffix" {
   description = "Suffix for resource names (used in tests to avoid naming conflicts)."
   type        = string
-  default     = ""
+  default     = "-sample"
 }

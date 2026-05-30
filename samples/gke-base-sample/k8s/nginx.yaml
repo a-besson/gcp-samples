@@ -1,3 +1,4 @@
+---
 # --- Namespace ---
 # Isolated namespace for the nginx workload
 apiVersion: v1

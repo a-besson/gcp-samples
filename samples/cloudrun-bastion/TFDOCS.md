@@ -50,7 +50,7 @@
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_iap_user_email"></a> [iap\_user\_email](#input\_iap\_user\_email) | Email of the user or group granted IAP-secured Web App User access (e.g., user@example.com). | `string` | n/a | yes |
-| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for the resource names (e.g. -dev or -test). | `string` | `""` | no |
+| <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for the resource names (e.g. -dev or -test). | `string` | `"-sample"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The Google Cloud Project ID. | `string` | n/a | yes |
 | <a name="input_project_number"></a> [project\_number](#input\_project\_number) | The Google Cloud Project Number (numeric ID). | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The GCP region to deploy the Cloud Run service. | `string` | `"europe-west1"` | no |

@@ -62,3 +62,9 @@ variable "is_spot" {
   type        = bool
   default     = false
 }
+
+variable "name_suffix" {
+  description = "Suffix for the resource names (e.g. -dev or -test)."
+  type        = string
+  default     = "-sample"
+}

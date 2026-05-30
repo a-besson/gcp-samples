@@ -25,3 +25,9 @@ variable "image_job" {
     error_message = "image_job must not be empty."
   }
 }
+
+variable "name_suffix" {
+  description = "Suffix for the resource names (e.g. -dev or -test)."
+  type        = string
+  default     = "-sample"
+}

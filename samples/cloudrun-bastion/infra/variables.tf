@@ -31,5 +31,5 @@ variable "project_number" {
 variable "name_suffix" {
   description = "Suffix for the resource names (e.g. -dev or -test)."
   type        = string
-  default     = ""
+  default     = "-sample"
 }

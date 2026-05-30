@@ -17,5 +17,5 @@ variable "image_service" {
 variable "name_suffix" {
   description = "Suffix for resource naming (used for test isolation)"
   type        = string
-  default     = ""
+  default     = "-sample"
 }
