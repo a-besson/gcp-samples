@@ -13,8 +13,17 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    litellm = {
+      source  = "ncecere/litellm"
+      version = "~> 0.3"
+    }
   }
   backend "gcs" {}
+}
+
+provider "litellm" {
+  api_base = google_cloud_run_v2_service.litellm.uri
+  api_key  = "Bearer ${data.google_secret_manager_secret_version.master_key.secret_data}"
 }
 
 provider "google" {

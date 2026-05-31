@@ -1,5 +1,5 @@
 # Pinned LiteLLM image — bump explicitly to control rollouts and CVE exposure.
-FROM ghcr.io/berriai/litellm:main-v1.52.0
+FROM ghcr.io/berriai/litellm:v1.86.2
 
 WORKDIR /app
 

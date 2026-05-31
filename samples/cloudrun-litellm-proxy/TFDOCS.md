@@ -87,6 +87,7 @@
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | ~> 6.0 |
 | <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 6.0 |
+| <a name="requirement_litellm"></a> [litellm](#requirement\_litellm) | ~> 0.3 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
 
 ## Providers
@@ -94,6 +95,7 @@
 | Name | Version |
 | ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
+| <a name="provider_litellm"></a> [litellm](#provider\_litellm) | 0.3.16 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.9.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -112,6 +114,7 @@
 | [google_bigquery_dataset.litellm](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/bigquery_dataset) | resource |
 | [google_bigquery_dataset_iam_member.runner_bq_editor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/bigquery_dataset_iam_member) | resource |
 | [google_bigquery_table.litellm_logs](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/bigquery_table) | resource |
+| [google_billing_budget.litellm](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_budget) | resource |
 | [google_cloud_run_domain_mapping.litellm](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_domain_mapping) | resource |
 | [google_cloud_run_v2_service.litellm](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
 | [google_cloud_run_v2_service_iam_member.invoker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
@@ -132,7 +135,10 @@
 | [google_secret_manager_secret_version.database_url](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_version) | resource |
 | [google_service_account.litellm_runner](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_networking_connection.private_vpc_connection](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_networking_connection) | resource |
+| [litellm_key.user](https://registry.terraform.io/providers/ncecere/litellm/latest/docs/resources/key) | resource |
 | [random_password.db_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [google_project.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
+| [google_secret_manager_secret_version.master_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/secret_manager_secret_version) | data source |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs
@@ -140,13 +146,15 @@
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_bigquery_dataset"></a> [bigquery\_dataset](#input\_bigquery\_dataset) | BigQuery dataset ID for LiteLLM observability logs (tokens, cost, latency). | `string` | `"litellm_observability"` | no |
+| <a name="input_billing_account"></a> [billing\_account](#input\_billing\_account) | Billing account ID (e.g. 0X0X0X-0X0X0X-0X0X0X) used to create a cost budget alert. Leave empty to skip the budget. The IaC service account needs roles/billing.costsManager on this account. | `string` | `""` | no |
 | <a name="input_cloudsql_tier"></a> [cloudsql\_tier](#input\_cloudsql\_tier) | Cloud SQL machine tier for the Postgres instance. | `string` | `"db-f1-micro"` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | vCPU per Cloud Run instance. | `string` | `"1"` | no |
 | <a name="input_dns_name"></a> [dns\_name](#input\_dns\_name) | Custom domain for the Cloud Run service (e.g. llm.example.com). Leave empty to skip DNS and domain-mapping resources. | `string` | `""` | no |
 | <a name="input_image_service"></a> [image\_service](#input\_image\_service) | Fully-qualified Docker image URI for the LiteLLM proxy container. | `string` | n/a | yes |
 | <a name="input_max_instances"></a> [max\_instances](#input\_max\_instances) | Maximum number of Cloud Run instances. | `number` | `5` | no |
-| <a name="input_memory"></a> [memory](#input\_memory) | Memory per Cloud Run instance. | `string` | `"1Gi"` | no |
+| <a name="input_memory"></a> [memory](#input\_memory) | Memory per Cloud Run instance. | `string` | `"2Gi"` | no |
 | <a name="input_min_instances"></a> [min\_instances](#input\_min\_instances) | Minimum Cloud Run instances. 1 = warm pool, 0 = scale-to-zero (cold starts). | `number` | `1` | no |
+| <a name="input_monthly_budget_amount"></a> [monthly\_budget\_amount](#input\_monthly\_budget\_amount) | Monthly cost budget threshold (in the billing account currency) for the budget alert. Alerts fire at 50%, 90%, and 100%. | `number` | `50` | no |
 | <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix appended to resource names (used for test isolation). | `string` | `"-sample"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The Google Cloud Project ID hosting the LiteLLM proxy. | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The GCP region used for Cloud Run, Artifact Registry, Secret Manager and Cloud SQL. | `string` | `"europe-west9"` | no |
@@ -162,6 +170,7 @@
 | <a name="output_cloudsql_connection_name"></a> [cloudsql\_connection\_name](#output\_cloudsql\_connection\_name) | Cloud SQL connection name (PROJECT:REGION:INSTANCE) used by the Auth Proxy sidecar. |
 | <a name="output_cloudsql_instance_name"></a> [cloudsql\_instance\_name](#output\_cloudsql\_instance\_name) | Cloud SQL instance name. |
 | <a name="output_curl_test_command"></a> [curl\_test\_command](#output\_curl\_test\_command) | A shell script/curl command to verify and test the deployed LiteLLM proxy service's liveness endpoint. |
+| <a name="output_curl_user_test_commands"></a> [curl\_user\_test\_commands](#output\_curl\_user\_test\_commands) | Shell commands to test each user's virtual key against the LiteLLM proxy. |
 | <a name="output_custom_domain"></a> [custom\_domain](#output\_custom\_domain) | Custom domain for the service (empty if var.dns\_name was not set). |
 | <a name="output_dashboard_url"></a> [dashboard\_url](#output\_dashboard\_url) | Cloud Monitoring dashboard URL (request rate, latency, instance count). |
 | <a name="output_database_url_secret_id"></a> [database\_url\_secret\_id](#output\_database\_url\_secret\_id) | Secret Manager secret ID holding DATABASE\_URL (populated automatically by Terraform). |
@@ -170,4 +179,5 @@
 | <a name="output_runner_sa_email"></a> [runner\_sa\_email](#output\_runner\_sa\_email) | Runtime Service Account email used by the proxy and Cloud SQL Auth Proxy. |
 | <a name="output_service_name"></a> [service\_name](#output\_service\_name) | Cloud Run service name. |
 | <a name="output_service_url"></a> [service\_url](#output\_service\_url) | Auto-generated Cloud Run URL (*.run.app) for the LiteLLM proxy. |
+| <a name="output_user_keys"></a> [user\_keys](#output\_user\_keys) | Virtual API keys generated for each user defined in users.yaml (sensitive). |
 <!-- END_TF_DOCS -->

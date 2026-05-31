@@ -7,71 +7,134 @@
 #   Gemma           → europe-west4 (Vertex AI Model Garden GPU endpoint)
 
 model_list:
-  # ─── Gemini — EU multi-region ──────────────────────────────────────────────
+  # ─── Gemini 2.5 Pro ────────────────────────────────────────────────────────
+  # Priorité 1 : Mono-région (europe-west1)
   - model_name: gemini-2.5-pro
     litellm_params:
       model: vertex_ai/gemini-2.5-pro
       vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: os.environ/VERTEXAI_LOCATION
+      vertex_location: europe-west1
+      stream: true
+  # Fallback 1 : Mono-région (Belgique)
+  - model_name: gemini-2.5-pro-fallback-1
+    litellm_params:
+      model: vertex_ai/gemini-2.5-pro
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west1
+      stream: true
+  # Fallback 2 : Mono-région (Pays-Bas)
+  - model_name: gemini-2.5-pro-fallback-2
+    litellm_params:
+      model: vertex_ai/gemini-2.5-pro
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west4
       stream: true
 
+  # ─── Gemini 2.5 Flash ──────────────────────────────────────────────────────
   - model_name: gemini-2.5-flash
     litellm_params:
       model: vertex_ai/gemini-2.5-flash
       vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: os.environ/VERTEXAI_LOCATION
+      vertex_location: europe-west1
+      stream: true
+  - model_name: gemini-2.5-flash-fallback-1
+    litellm_params:
+      model: vertex_ai/gemini-2.5-flash
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west1
+      stream: true
+  - model_name: gemini-2.5-flash-fallback-2
+    litellm_params:
+      model: vertex_ai/gemini-2.5-flash
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west4
       stream: true
 
-  # ─── Claude / Anthropic via Vertex AI — EU multi-region ────────────────────
-  # Claude 4.6+ models use dateless IDs (no @date suffix).
-  # EU multi-region endpoint pools capacity across EU regions.
+  # ─── Gemini 3.5 Flash ──────────────────────────────────────────────────────
+  - model_name: gemini-3.5-flash
+    litellm_params:
+      model: vertex_ai/gemini-3.5-flash
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: eu
+      stream: true
+
+  # ─── Claude / Anthropic via Vertex AI ──────────────────────────────────────
+  # Claude Opus 4.7
   - model_name: claude-opus-4-7
     litellm_params:
-      model: vertex_ai/claude-opus-4-7
+      model: vertex_ai/claude-opus-4@20250514
       vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: os.environ/VERTEXAI_LOCATION
+      vertex_location: europe-west1
+      stream: true
+  - model_name: claude-opus-4-7-fallback
+    litellm_params:
+      model: vertex_ai/claude-opus-4@20250514
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west1
       stream: true
 
+  # ATTENTION : Remplacement de "global" par des mono-régions EU.
+  # Garantit que les requêtes ne transitent pas par l'Amérique du Nord.
+  
+  # Claude Opus 4.6
   - model_name: claude-opus-4-6
     litellm_params:
       model: vertex_ai/claude-opus-4-6
       vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: os.environ/VERTEXAI_LOCATION
+      vertex_location: europe-west1
+      stream: true
+  - model_name: claude-opus-4-6-fallback
+    litellm_params:
+      model: vertex_ai/claude-opus-4-6
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west4
       stream: true
 
+  # Claude Sonnet 4.6
   - model_name: claude-sonnet-4-6
     litellm_params:
       model: vertex_ai/claude-sonnet-4-6
       vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: os.environ/VERTEXAI_LOCATION
+      vertex_location: europe-west1
+      stream: true
+  - model_name: claude-sonnet-4-6-fallback
+    litellm_params:
+      model: vertex_ai/claude-sonnet-4-6
+      vertex_project: os.environ/VERTEXAI_PROJECT
+      vertex_location: europe-west4
       stream: true
 
+  # Claude Haiku 4.5
   - model_name: claude-haiku-4-5
     litellm_params:
-      model: vertex_ai/claude-haiku-4-5
+      model: vertex_ai/claude-haiku-3-5@20241022
       vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: os.environ/VERTEXAI_LOCATION
+      vertex_location: europe-west1
       stream: true
-
-  # ─── Gemma 3 — Vertex AI Model Garden (europe-west4) ───────────────────────
-  # Model Garden IDs: google/gemma3@gemma-3-1b-it, google/gemma3@gemma-3-27b-it
-  # Requires Model Garden access in europe-west4. If serverless is unavailable,
-  # deploy via Model Garden and replace the model ID with:
-  #   model: vertex_ai/<ENDPOINT_ID>
-  #   api_base: https://<ENDPOINT_ID>.europe-west4-<PROJECT>.prediction.vertexai.goog
-  - model_name: gemma-3-1b
+  - model_name: claude-haiku-4-5-fallback
     litellm_params:
-      model: vertex_ai/google/gemma3@gemma-3-1b-it
+      model: vertex_ai/claude-haiku-3-5@20241022
       vertex_project: os.environ/VERTEXAI_PROJECT
       vertex_location: europe-west4
       stream: true
 
-  - model_name: gemma-3-27b
-    litellm_params:
-      model: vertex_ai/google/gemma3@gemma-3-27b-it
-      vertex_project: os.environ/VERTEXAI_PROJECT
-      vertex_location: europe-west4
-      stream: true
+
+
+# ─── Moteur de Routage (Load Balancing & Résilience) ────────────────────────
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2                   # Nombre de tentatives avant échec définitif de la requête
+  allowed_fails: 3                 # Circuit-Breaker: Retire une région de la rotation après 3 échecs consécutifs
+  cooldown_time: 60                # Attente (en sec) avant de réintégrer la région défaillante
+  
+  # Configuration de la cascade (Multi-région -> Mono-région 1 -> Mono-région 2)
+  fallback_dict:
+    gemini-2.5-pro: ["gemini-2.5-pro-fallback-1", "gemini-2.5-pro-fallback-2"]
+    gemini-2.5-flash: ["gemini-2.5-flash-fallback-1", "gemini-2.5-flash-fallback-2"]
+    claude-opus-4-7: ["claude-opus-4-7-fallback"]
+    claude-opus-4-6: ["claude-opus-4-6-fallback"]
+    claude-sonnet-4-6: ["claude-sonnet-4-6-fallback"]
+    claude-haiku-4-5: ["claude-haiku-4-5-fallback"]
 
 litellm_settings:
   success_callback: ["bigquery"]

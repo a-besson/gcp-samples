@@ -17,6 +17,7 @@ module "project_services" {
     "servicenetworking.googleapis.com",
     "dns.googleapis.com",
     "bigquery.googleapis.com",
+    "billingbudgets.googleapis.com",
   ]
 }
 

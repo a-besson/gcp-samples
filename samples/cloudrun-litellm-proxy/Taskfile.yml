@@ -104,24 +104,68 @@ tasks:
           }" | jq .
 
   smoke:
-    desc: "End-to-end test with a virtual key (fetches master key, creates a temp key, calls the proxy)"
+    desc: "End-to-end smoke test — verifies Gemini, Claude Sonnet 4-6, and Gemma via virtual key"
     dir: infra
     cmds:
       - |
+        set -euo pipefail
         SERVICE_URL=$(terraform output -raw service_url)
         MASTER_KEY=$(gcloud secrets versions access latest --secret=litellm-master-key{{.NAME_SUFFIX}} --project={{.PROJECT_ID}})
-        # Create a temporary test key
+
+        # ── Create a temporary test key ──────────────────────────────────────
+        echo -e "\n🔑 Creating temporary virtual key..."
         VKEY=$(curl -sS -X POST "${SERVICE_URL}/key/generate" \
           -H "x-api-key: Bearer ${MASTER_KEY}" \
           -H "Content-Type: application/json" \
-          -d '{"key_alias":"smoke-test","max_budget":1,"budget_duration":"1d"}' \
+          -d "{\"key_alias\":\"smoke-test-$(date +%s)\",\"max_budget\":1,\"budget_duration\":\"1d\"}" \
           | jq -r .key)
-        # Call the proxy with the virtual key
-        curl -sS -X POST "${SERVICE_URL}/v1/chat/completions" \
-          -H "x-api-key: Bearer ${VKEY}" \
-          -H "Content-Type: application/json" \
-          -d '{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"Reply with the single word: OK"}]}' \
-          | jq .
+
+        if [ -z "${VKEY}" ] || [ "${VKEY}" = "null" ]; then
+          echo "❌ Failed to generate virtual key"; exit 1
+        fi
+        echo "   ✅ Virtual key created"
+
+        # ── Test each model family ───────────────────────────────────────────
+        MODELS=("gemini-2.5-flash" "gemini-3.5-flash" "gemini-2.5-pro")
+        PASS=0
+        FAIL=0
+
+        for MODEL in "${MODELS[@]}"; do
+          echo -e "\n🤖 Testing model: \033[1m${MODEL}\033[0m"
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "${SERVICE_URL}/v1/chat/completions" \
+            -H "x-api-key: Bearer ${VKEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"model\":\"${MODEL}\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with the single word: OK\"}]}")
+
+          HTTP_CODE=$(echo "${RESPONSE}" | tail -n1)
+          BODY=$(echo "${RESPONSE}" | sed '$d')
+
+          if [ "${HTTP_CODE}" = "200" ]; then
+            CONTENT=$(echo "${BODY}" | jq -r '.choices[0].message.content // empty')
+            if [ -n "${CONTENT}" ]; then
+              echo "   ✅ HTTP ${HTTP_CODE} — Response: ${CONTENT}"
+              PASS=$((PASS + 1))
+            else
+              echo "   ❌ HTTP ${HTTP_CODE} — Empty response body"
+              echo "${BODY}" | jq .
+              FAIL=$((FAIL + 1))
+            fi
+          else
+            echo "   ❌ HTTP ${HTTP_CODE}"
+            echo "${BODY}" | jq -r '.error.message // .' 2>/dev/null | head -n 3
+            FAIL=$((FAIL + 1))
+          fi
+        done
+
+        # ── Summary ──────────────────────────────────────────────────────────
+        TOTAL=$((PASS + FAIL))
+        echo -e "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo -e "📊 Smoke test results: \033[32m${PASS}/${TOTAL} passed\033[0m"
+        if [ "${FAIL}" -gt 0 ]; then
+          echo -e "   \033[31m${FAIL} model(s) failed\033[0m"
+          exit 1
+        fi
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   query-spend:
     desc: "Query BigQuery for per-model token and cost usage (last 7 days)"
@@ -141,6 +185,11 @@ tasks:
            GROUP BY 1, 2, 3
            ORDER BY day DESC, cost_usd DESC
            LIMIT 50'
+
+  review:
+    desc: "Run pre-commit hooks on all files (fmt, validate, tflint, tfdocs)"
+    cmds:
+      - pre-commit run --all-files
 
   destroy:
     desc: "Destroy all resources (WARNING: deletes Cloud SQL data)"

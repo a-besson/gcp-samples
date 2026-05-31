@@ -5,6 +5,23 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-05-31] - Daily Log - Revue de sécurité du sample LiteLLM Proxy
+
+- **Revue de sécurité (`cloudrun-litellm-proxy`)** : Audit avancé de la posture de sécurité (réseau, IAM, secrets, exposition).
+  - Suppression de `test_gemini.sh` qui contenait un `project_id` GCP en dur (violation de `secret-handling`).
+  - Durcissement du control-plane : désactivation de l'UI d'administration LiteLLM (`DISABLE_ADMIN_UI=True`) dans `cloudrun.tf`, le service étant exposé publiquement (`allUsers`). La gestion des clés/utilisateurs reste 100% as-code (provider Terraform `litellm` + Admin API protégée par master key). `DISABLE_ADMIN_ENDPOINTS` volontairement non activé pour ne pas casser Terraform.
+  - Documentation : ajout d'une ligne « Control-plane hardening » au tableau de design du `README.md`.
+  - Correction d'une affirmation inexacte sur le « strip » des headers `Authorization` par le GFE (README + commentaire `iam.tf`) : avec `allUsers`, Cloud Run ne strippe pas ce header ; `x-api-key` sert à éviter une collision avec le header réservé par la couche IAM.
+  - Garde-fou coût (anti-DoS de coût) : ajout de `budget.tf` (`google_billing_budget` optionnel, activé via `var.billing_account`) avec alertes à 50/90/100% scopées au projet. Variables `billing_account` et `monthly_budget_amount` (défaut 50), API `billingbudgets.googleapis.com` activée, data source `google_project`.
+
+## [2026-05-30] - Daily Log - Gestion as-code des utilisateurs pour LiteLLM Proxy
+
+- **User Management as Code (`cloudrun-litellm-proxy`)** : Implémentation du provider Terraform communautaire `ncecere/litellm` pour gérer de manière déclarative le cycle de vie des utilisateurs (Virtual Keys) et leurs budgets.
+  - Création du fichier `users.yaml` comme single source of truth pour déclarer les utilisateurs, leur budget, et l'accès aux modèles.
+  - Intégration Terraform : le provider litellm lit le fichier YAML (via `yamldecode`) et effectue les opérations (Create/Update/Delete) sur le proxy en utilisant la Master Key récupérée dynamiquement depuis Secret Manager via un `data_source`.
+  - Documentation : Création du guide détaillé `docs/user-management.md` décrivant les opérations de cycle de vie, la rotation de clé (via `terraform taint`), et l'audit BigQuery. Mise à jour de l'architecture et du `README.md`.
+  - Sécurité : Exfiltration et neutralisation des guides de configuration clients (`setup-claude-code.md` et `setup-gemini-cli.md`). Les informations propres au projet ont été remplacées par des placeholders universels (`<YOUR_LITELLM_ENDPOINT>`, `<YOUR_API_KEY>`), rendant les guides réutilisables publiquement.
+
 ## [2026-05-25] - Daily Log - Fix `samples/base` apply error and testing improvements
 
 - **Résolution du bug `samples/base`** : Suppression de l'impersonation circulaire dans `providers.tf` (le module de fondation ne peut pas s'auto-impersonner avant d'exister). Ajout de l'activation automatique des APIs critiques (`artifactregistry.googleapis.com`, `compute.googleapis.com`, `iam.googleapis.com`) avec `depends_on` dans les modules. Correction de `sa-iac.tf` pour utiliser `name_suffix` et éviter les conflits 409 lors des tests parallèles. Mise à jour de `unit.tftest.hcl` pour valider les nouveaux services et utiliser `effective_labels` (compatible avec `default_labels` provider).

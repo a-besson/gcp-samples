@@ -12,32 +12,12 @@ This guide explains how to connect **Claude Code** (CLI and VS Code extension) t
 
 ## 1. Retrieve Your Connection Details
 
-```bash
-# Navigate to the infra directory
-cd samples/cloudrun-litellm-proxy/infra
+You will need two pieces of information from your LiteLLM proxy administrator:
+1. The **Service URL** (e.g., `https://litellm-proxy-abc123xyz.run.app`)
+2. Your personal **Virtual API Key** (starts with `sk-`)
 
-# Get the Cloud Run service URL
-SERVICE_URL=$(terraform output -raw service_url)
-echo "Service URL: ${SERVICE_URL}"
-
-# Get your personal virtual key (issued by your admin via task provision-key)
-# Or retrieve the master key if you are the admin:
-MASTER_KEY=$(gcloud secrets versions access latest --secret=litellm-master-key-sample)
-echo "Master Key: ${MASTER_KEY}"
-
-# Create a personal virtual key for claude-code (if not already done)
-USER_KEY=$(curl -sS -X POST "${SERVICE_URL}/key/generate" \
-  -H "x-api-key: Bearer ${MASTER_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key_alias": "claude-code-'"${USER}"'",
-    "max_budget": 20,
-    "budget_duration": "7d",
-    "models": ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5"],
-    "metadata": {"user": "'"${USER}"'", "client": "claude-code"}
-  }' | jq -r '.key')
-echo "User Key: ${USER_KEY}"
-```
+> [!TIP]
+> If you are the administrator, see the [User Management Guide](./user-management.md) for instructions on how to provision users and retrieve their virtual keys via Terraform.
 
 ---
 
@@ -47,8 +27,8 @@ Claude Code uses the `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` environment va
 
 ```bash
 # Export the two required variables in your shell
-export ANTHROPIC_BASE_URL="$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw service_url)"
-export ANTHROPIC_API_KEY="sk-your-virtual-key-here"  # Replace with your issued key
+export ANTHROPIC_BASE_URL="<YOUR_LITELLM_ENDPOINT>"
+export ANTHROPIC_API_KEY="<YOUR_API_KEY>"
 
 # Verify the proxy is reachable before starting claude
 curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
@@ -68,8 +48,8 @@ claude
 cat >> ~/.zshrc << 'EOF'
 
 # LiteLLM Proxy — Claude Code configuration
-export ANTHROPIC_BASE_URL="https://your-cloudrun-url.run.app"  # Replace with your URL
-export ANTHROPIC_API_KEY="sk-your-virtual-key-here"            # Replace with your key
+export ANTHROPIC_BASE_URL="<YOUR_LITELLM_ENDPOINT>"
+export ANTHROPIC_API_KEY="<YOUR_API_KEY>"
 EOF
 ```
 
@@ -90,8 +70,8 @@ Or edit `~/.config/Code/User/settings.json` manually:
 
 ```json
 {
-  "claude.apiBaseUrl": "https://your-cloudrun-url.run.app",
-  "claude.apiKey": "sk-your-virtual-key-here"
+  "claude.apiBaseUrl": "<YOUR_LITELLM_ENDPOINT>",
+  "claude.apiKey": "<YOUR_API_KEY>"
 }
 ```
 
@@ -110,13 +90,13 @@ claude -p "Reply with exactly: LiteLLM proxy is working!"
 # LiteLLM proxy is working!
 ```
 
-Check the proxy logs to confirm the request was routed through Vertex AI:
+Check the proxy logs (if you have Google Cloud access) to confirm the request was routed through Vertex AI:
 
 ```bash
 # Tail Cloud Run logs (last 10 minutes)
 gcloud logging read \
   'resource.type="cloud_run_revision" AND resource.labels.service_name="litellm-proxy-sample"' \
-  --project="$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw project_id 2>/dev/null || echo YOUR_PROJECT_ID)" \
+  --project="<YOUR_GCP_PROJECT_ID>" \
   --freshness=10m \
   --format="value(textPayload)" \
   | grep -E "(model|claude|spend|success)" | head -20

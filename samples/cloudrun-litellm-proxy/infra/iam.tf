@@ -68,9 +68,10 @@ resource "google_project_iam_member" "runner_bq_job_user" {
 
 # Security Design — Two-layer authentication model:
 #   Layer 1 (Network): Cloud Run is publicly reachable (allUsers invoker) so that
-#     standard OpenAI SDK clients can connect without a GCP identity. The Google
-#     Frontend (GFE) strips standard `Authorization: Bearer` headers, so using
-#     a custom `x-api-key` header bypasses GFE interception.
+#     standard OpenAI SDK clients can connect without a GCP identity. The virtual
+#     key is sent in a custom `x-api-key` header to avoid any collision with the
+#     `Authorization: Bearer` header that Cloud Run's IAM layer reserves for
+#     Google identity tokens.
 #   Layer 2 (Application): Every request MUST carry a valid LiteLLM Virtual Key
 #     in `x-api-key: Bearer sk-...`. The proxy rejects unauthenticated requests
 #     at the application level (middleware: litellm_key_header_name).

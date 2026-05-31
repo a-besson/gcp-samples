@@ -65,3 +65,28 @@ output "curl_test_command" {
 curl -sS -f "${google_cloud_run_v2_service.litellm.uri}/health/liveliness"
 EOT
 }
+
+output "user_keys" {
+  description = "Virtual API keys generated for each user defined in users.yaml (sensitive)."
+  value = {
+    for name, key in litellm_key.user : name => {
+      key_alias = key.key_alias
+      key       = key.key
+    }
+  }
+  sensitive = true
+}
+
+output "curl_user_test_commands" {
+  description = "Shell commands to test each user's virtual key against the LiteLLM proxy."
+  value = join("\n\n", [
+    for name, key in litellm_key.user :
+    <<-EOT
+    # Test user: ${name}
+    curl -sS -X POST "${google_cloud_run_v2_service.litellm.uri}/v1/chat/completions" \
+      -H "x-api-key: Bearer $(terraform output -json user_keys | jq -r '.${name}.key')" \
+      -H "Content-Type: application/json" \
+      -d '{"model":"gemini-2.5-flash","messages":[{"role":"user","content":"Reply OK"}]}' | jq .
+    EOT
+  ])
+}

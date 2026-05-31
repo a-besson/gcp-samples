@@ -13,30 +13,12 @@ This guide explains how to connect **Gemini CLI** (`gemini`) and **Antigravity C
 
 ## 1. Retrieve Your Connection Details
 
-```bash
-# Navigate to the infra directory
-cd samples/cloudrun-litellm-proxy/infra
+You will need two pieces of information from your LiteLLM proxy administrator:
+1. The **Service URL** (e.g., `https://litellm-proxy-abc123xyz.run.app`)
+2. Your personal **Virtual API Key** (starts with `sk-`)
 
-# Get the Cloud Run service URL
-SERVICE_URL=$(terraform output -raw service_url)
-echo "Service URL: ${SERVICE_URL}"
-
-# Get admin master key (admin only)
-MASTER_KEY=$(gcloud secrets versions access latest --secret=litellm-master-key-sample)
-
-# Create a personal virtual key for gemini-cli / antigravity-cli
-USER_KEY=$(curl -sS -X POST "${SERVICE_URL}/key/generate" \
-  -H "x-api-key: Bearer ${MASTER_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key_alias": "gemini-cli-'"${USER}"'",
-    "max_budget": 20,
-    "budget_duration": "7d",
-    "models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemma-3-27b"],
-    "metadata": {"user": "'"${USER}"'", "client": "gemini-cli"}
-  }' | jq -r '.key')
-echo "User Key: ${USER_KEY}"
-```
+> [!TIP]
+> If you are the administrator, see the [User Management Guide](./user-management.md) for instructions on how to provision users and retrieve their virtual keys via Terraform.
 
 ---
 
@@ -48,8 +30,8 @@ The Gemini CLI supports the OpenAI-compatible API format via the `GEMINI_API_BAS
 
 ```bash
 # Export required variables in your shell session
-export GEMINI_API_BASE="$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw service_url)/v1"
-export GEMINI_API_KEY="sk-your-virtual-key-here"  # Replace with your issued key
+export GEMINI_API_BASE="<YOUR_LITELLM_ENDPOINT>/v1"
+export GEMINI_API_KEY="<YOUR_API_KEY>"
 
 # Verify connectivity
 curl -sS -o /dev/null -w "HTTP %{http_code}\n" \
@@ -67,8 +49,8 @@ gemini
 > cat >> ~/.zshrc << 'EOF'
 >
 > # LiteLLM Proxy — Gemini CLI configuration
-> export GEMINI_API_BASE="https://your-cloudrun-url.run.app/v1"  # Replace with your URL
-> export GEMINI_API_KEY="sk-your-virtual-key-here"               # Replace with your key
+> export GEMINI_API_BASE="<YOUR_LITELLM_ENDPOINT>/v1"
+> export GEMINI_API_KEY="<YOUR_API_KEY>"
 > EOF
 > ```
 
@@ -76,8 +58,8 @@ gemini
 
 ```bash
 gemini \
-  --base-url "$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw service_url)/v1" \
-  --api-key "sk-your-virtual-key-here" \
+  --base-url "<YOUR_LITELLM_ENDPOINT>/v1" \
+  --api-key "<YOUR_API_KEY>" \
   --model "gemini-2.5-flash" \
   -p "Hello from LiteLLM proxy!"
 ```
@@ -92,8 +74,8 @@ The Antigravity CLI (`agy`) uses the OpenAI-compatible API endpoint. Configure i
 
 ```bash
 # Export required variables
-export OPENAI_API_BASE="$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw service_url)/v1"
-export OPENAI_API_KEY="sk-your-virtual-key-here"  # Replace with your issued key
+export OPENAI_API_BASE="<YOUR_LITELLM_ENDPOINT>/v1"
+export OPENAI_API_KEY="<YOUR_API_KEY>"
 
 # Override the default header to use x-api-key (required for Cloud Run GFE bypass)
 export OPENAI_API_HEADER="x-api-key=Bearer ${OPENAI_API_KEY}"
@@ -110,10 +92,10 @@ Create or edit `~/.config/antigravity/config.yaml`:
 mkdir -p ~/.config/antigravity
 cat > ~/.config/antigravity/config.yaml << EOF
 api:
-  base_url: "https://your-cloudrun-url.run.app/v1"  # Replace with your URL
-  api_key: "sk-your-virtual-key-here"               # Replace with your key
+  base_url: "<YOUR_LITELLM_ENDPOINT>/v1"
+  api_key: "<YOUR_API_KEY>"
   headers:
-    x-api-key: "Bearer sk-your-virtual-key-here"    # Custom auth header
+    x-api-key: "Bearer <YOUR_API_KEY>"
   default_model: "gemini-2.5-flash"
 EOF
 ```
@@ -121,8 +103,8 @@ EOF
 ### Option C — Verify with a Direct API Call
 
 ```bash
-SERVICE_URL=$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw service_url)
-USER_KEY="sk-your-virtual-key-here"
+SERVICE_URL="<YOUR_LITELLM_ENDPOINT>"
+USER_KEY="<YOUR_API_KEY>"
 
 curl -sS -X POST "${SERVICE_URL}/v1/chat/completions" \
   -H "x-api-key: Bearer ${USER_KEY}" \
@@ -151,10 +133,10 @@ curl -sS -X POST "${SERVICE_URL}/v1/chat/completions" \
 
 ## 5. Monitor Your Usage
 
-After running queries, you can inspect your token usage and cost in BigQuery:
+After running queries, you can inspect your token usage and cost in BigQuery (if you have Google Cloud access):
 
 ```bash
-PROJECT_ID=$(cd samples/cloudrun-litellm-proxy/infra && terraform output -raw project_id 2>/dev/null || echo "YOUR_PROJECT_ID")
+PROJECT_ID="<YOUR_GCP_PROJECT_ID>"
 
 bq query --project_id="${PROJECT_ID}" --use_legacy_sql=false "
 SELECT

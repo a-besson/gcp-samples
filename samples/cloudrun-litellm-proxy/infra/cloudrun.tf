@@ -82,6 +82,14 @@ resource "google_cloud_run_v2_service" "litellm" {
         name  = "LITELLM_CONFIG_PATH"
         value = "/app/config.yaml"
       }
+      # Control-plane hardening: disable the browser Admin UI (/ui) since the
+      # service is publicly reachable (allUsers). Key/user management is done
+      # via Terraform (litellm provider) and the master-key-protected Admin API.
+      # NOTE: do NOT set DISABLE_ADMIN_ENDPOINTS — it would break Terraform.
+      env {
+        name  = "DISABLE_ADMIN_UI"
+        value = "True"
+      }
       env {
         name  = "VERTEXAI_PROJECT"
         value = var.project_id

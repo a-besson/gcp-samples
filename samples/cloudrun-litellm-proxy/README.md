@@ -43,18 +43,19 @@ graph TD
 ```
 
 > [!TIP]
-> **Draw.io Diagram:** A professional, fully detailed draw.io architecture diagram with standard GCP icons is available at [architecture.drawio](file:///Users/adrien/workspace/cloud/gcp-samples/samples/cloudrun-litellm-proxy/architecture.drawio). Open it in [draw.io](https://app.diagrams.net/) to inspect or edit the visual enterprise components.
+> **Draw.io Diagram:** A professional, fully detailed draw.io architecture diagram with standard GCP icons is available at [architecture.drawio](./architecture.drawio). Open it in [draw.io](https://app.diagrams.net/) to inspect or edit the visual enterprise components.
 
 ### 🧰 Key Design Decisions
 
 | Component | Design Details |
 |---|---|
 | **Network Security** | Direct VPC Egress enabled on `base.subnet_public`. Ingress set to `INGRESS_TRAFFIC_ALL`. Egress configured as `PRIVATE_RANGES_ONLY` — ensuring all connections to Vertex AI and Cloud SQL (via private IP) stay on Google's private backbone network rather than traveling over the public internet. |
-| **Authentication** | Two-layer model: **LiteLLM Virtual Keys** (`sk-...`) act as the application gate. IAM is kept open (`allUsers invoker`) so any developer client can hit the proxy without a GCP identity. Since Google Frontend (GFE) strips standard `Authorization: Bearer` headers, we use a custom `x-api-key` header to bypass GFE validation. |
+| **Authentication** | Two-layer model: **LiteLLM Virtual Keys** (`sk-...`) act as the application gate. IAM is kept open (`allUsers invoker`) so any developer client can hit the proxy without a GCP identity. The virtual key travels in a custom `x-api-key` header to avoid any collision with the `Authorization: Bearer` header that Cloud Run's IAM layer reserves for Google identity tokens. |
+| **Control-plane hardening** | The browser Admin UI (`/ui`) is disabled (`DISABLE_ADMIN_UI=True`) because the service is internet-reachable. Key/user management is done **as code** via Terraform (`litellm` provider) and the master-key-protected Admin API — no public admin surface. |
 | **Per-User Virtual Keys** | Generated dynamically via `POST /key/generate` (authorized by `LITELLM_MASTER_KEY`). Every key has a configurable `max_budget`, `budget_duration`, allowed `models` list, and custom `user` metadata. Keys are persisted in Cloud SQL. |
 | **Private Cloud SQL** | PostgreSQL 15 deployed with **Private IP only** (`ipv4_enabled = false`). SSL enforced (`ENCRYPTED_ONLY`). A `cloud-sql-proxy` sidecar handles secure mTLS + IAM-authenticated connectivity. Daily backups with 7-day retention and Point-In-Time Recovery (PITR) enabled. |
 | **Secret Management** | Sensitive variables (`LITELLM_MASTER_KEY` and `DATABASE_URL`) are stored in **Secret Manager**. The Master Key is seeded out-of-band so it never leaks into the Terraform state. |
-| **Inference Regions** | **Gemini & Claude** → `europe-west9`. **Gemma** → `europe-west4` (Vertex AI Model Garden GPU endpoint). |
+| **Inference Regions** | **Gemini & Claude** → `eu` (EU multi-region, routes to nearest EU datacenter). **Gemma** → `europe-west4` (Vertex AI Model Garden GPU endpoint). |
 
 ---
 
@@ -101,35 +102,41 @@ $(terraform output -raw curl_test_command)
 
 ## 🔑 Managing Virtual Keys
 
-Virtual keys are managed by hitting the admin endpoints of the proxy using your **Admin Master Key** passed in the `x-api-key: Bearer ...` header.
+Virtual keys are managed **as code** via the [`users.yaml`](./users.yaml) file and the Terraform `litellm` provider. On each `task apply`, Terraform synchronizes keys with the running proxy.
 
 ```bash
-# 1. Fetch the master key and service URL
+# 1. Declare users in users.yaml
+cat users.yaml
+
+# 2. Apply to create/update/delete keys
+task apply
+
+# 3. Retrieve generated keys
+cd infra && terraform output -json user_keys | jq .
+```
+
+> [!TIP]
+> For the full user lifecycle guide (add, modify, remove, rotate keys, audit budgets), see 📖 [User Management Guide](./docs/user-management.md).
+
+### Manual Key Management (Admin API)
+
+For ad-hoc operations outside of Terraform, use the Admin API directly:
+
+```bash
+# Fetch the master key and service URL
 SERVICE_URL=$(cd infra && terraform output -raw service_url)
 MASTER_KEY=$(gcloud secrets versions access latest --secret=litellm-master-key-sample)
 
-# 2. Create a virtual key for user alice with a 7-day budget cycle of 10€
+# Create a virtual key for user alice with a 7-day budget cycle of $10
 task provision-key USER=alice MAX_BUDGET=10
 
-# Or call the Admin API directly to generate a key with a 7-day budget cycle:
-curl -sS -X POST "${SERVICE_URL}/key/generate" \
-  -H "x-api-key: Bearer ${MASTER_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key_alias": "alice",
-    "max_budget": 10,
-    "budget_duration": "7d",
-    "models": ["gemini-2.5-flash", "gemini-2.5-pro", "claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5", "gemma-3-27b"],
-    "metadata": {"user": "alice", "team": "backend"}
-  }' | jq .
-
-# 3. List all virtual keys with their human-readable aliases, owners, and spend details:
+# List all virtual keys with their human-readable aliases, owners, and spend details:
 for hash in $(curl -sS "${SERVICE_URL}/key/list" -H "x-api-key: Bearer ${MASTER_KEY}" | jq -r '.keys[]'); do
   curl -sS "${SERVICE_URL}/key/info?key=${hash}" -H "x-api-key: Bearer ${MASTER_KEY}" | jq -c '{alias: .info.key_alias, user: .info.metadata.user, key_name: .info.key_name, spend: .info.spend, max_budget: .info.max_budget}'
 done
 
-# 4. Delete a key
-curl -sS -X DELETE "${SERVICE_URL}/key/delete" \
+# Delete a key
+curl -sS -X POST "${SERVICE_URL}/key/delete" \
   -H "x-api-key: Bearer ${MASTER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{"keys": ["sk-..."]}' | jq .
@@ -146,15 +153,28 @@ Clients connect to the OpenAI-compatible proxy by sending their assigned Virtual
 SERVICE_URL=$(cd infra && terraform output -raw service_url)
 USER_KEY="sk-..."  # Replace with your issued virtual key
 
-# 2. Call the chat completions endpoint via curl
-curl -sS -X POST "${SERVICE_URL}/v1/chat/completions" \
-  -H "x-api-key: Bearer ${USER_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gemini-2.5-flash",
-    "messages": [{"role": "user", "content": "Say hi!"}],
-    "stream": true
-  }'
+# 2. Call the chat completions endpoint for all available models
+MODELS=(
+  "gemini-2.5-flash"
+  "gemini-2.5-pro"
+  "claude-opus-4-7"
+  "claude-sonnet-4-6"
+  "claude-haiku-4-5"
+  "gemma-3-27b"
+)
+
+for MODEL in "${MODELS[@]}"; do
+  echo -e "\n🤖 Testing model: \033[1m${MODEL}\033[0m"
+  curl -sS -X POST "${SERVICE_URL}/v1/chat/completions" \
+    -H "x-api-key: Bearer ${USER_KEY}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "model": "'"${MODEL}"'",
+      "messages": [{"role": "user", "content": "Donne moi la recette une baguette de pain"}],
+      "stream": false
+    }' | jq -r '.choices[0].message.content' | head -n 5
+  echo "..."
+done
 ```
 
 ---
@@ -264,26 +284,33 @@ cd infra && terraform output -raw dashboard_url
 
 Set `min_instances=0` and `cloudsql_tier=db-f1-micro` to minimise idle cost. Set `var.dns_name=""` to skip DNS resources entirely.
 
+> [!TIP]
+> **Cost guardrail:** set `var.billing_account` (and optionally `var.monthly_budget_amount`, default 50) to provision a `google_billing_budget` scoped to this project. Alerts fire at 50%, 90%, and 100% — a zero-cost defense against runaway spend (leaked virtual key, scaling storms). Requires `roles/billing.costsManager` on the billing account for the IaC service account.
+
 ## Project structure
 
 ```text
 cloudrun-litellm-proxy/
 ├── app/
-│   ├── Dockerfile               # pinned LiteLLM v1.52.0
+│   ├── Dockerfile               # pinned LiteLLM v1.86.2
 │   └── config.yaml              # models + database_url + store_model_in_db=false
 ├── docs/
+│   ├── user-management.md       # User lifecycle, virtual keys, budgets
 │   ├── setup-claude-code.md     # Claude Code CLI + VS Code extension setup guide
 │   └── setup-gemini-cli.md      # Gemini CLI + Antigravity CLI setup guide
 ├── infra/
-│   ├── providers.tf             # google ~> 6.0, random ~> 3.6
+│   ├── providers.tf             # google ~> 6.0, random ~> 3.6, litellm ~> 0.3
 │   ├── variables.tf             # project_id, region, dns_name, cloudsql_tier, ...
 │   ├── main.tf                  # APIs, base remote state, DNS locals
+│   ├── data.tf                  # master_key data source for litellm provider
+│   ├── users.tf                 # users-as-code (litellm_key)
 │   ├── iam.tf                   # runner SA + least-privilege bindings (two-layer auth)
 │   ├── secrets.tf               # master_key + database_url secrets
 │   ├── artifact_registry.tf     # Docker repo
 │   ├── cloudsql.tf              # random_password, VPC peering, Postgres module (SSL enforced)
 │   ├── cloudrun.tf              # Cloud Run v2 + Cloud SQL Auth Proxy sidecar
 │   ├── bigquery.tf              # BigQuery dataset + litellm_logs table (partitioned by day)
+│   ├── budget.tf                # optional billing budget alert (count = billing_account set)
 │   ├── observability.tf         # Cloud Monitoring dashboard (request rate, latency, instances)
 │   ├── dns.tf                   # managed zone + CNAME (count = create_dns)
 │   ├── domain_mapping.tf        # Cloud Run domain mapping (count = create_dns)
