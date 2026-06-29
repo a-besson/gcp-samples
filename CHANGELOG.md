@@ -5,6 +5,12 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-06-24] - Daily Log - Audit de sécurité des dépendances (supply chain)
+
+- **Remédiation CVE-2026-27205 (`cloudrun-service`)** : Bump Flask 3.0.3 → 3.1.3 pour corriger la vulnérabilité de cache HTTP (GHSA-68rp-wp8r-4726). L'en-tête `Vary: Cookie` n'était pas systématiquement positionné lors des accès à la session via l'opérateur `in`, ce qui pouvait exposer des réponses authentifiées à des caches intermédiaires. Confirmé et résolu via `pip-audit` (aucune vulnérabilité résiduelle).
+- **Dépendance obsolète signalée (`cloudrun-service`)** : gunicorn 22.0.0 est 4 versions majeures en retard (dernière stable : 26.0.0). Aucun CVE confirmé via pip-audit. Une PR séparée est requise, avec validation humaine, car il s'agit d'un bump majeur.
+- **Périmètre non couvert faute d'accès réseau** : versions des providers Terraform (registry.terraform.io inaccessible), patches des images Docker base (Docker Hub bloqué), et versions des hooks pre-commit (API GitHub bloquée pour dépôts externes). Un scan complémentaire avec Trivy/Grype en environnement connecté est recommandé.
+
 ## [2026-05-31] - Daily Log - Revue de sécurité du sample LiteLLM Proxy
 
 - **Revue de sécurité (`cloudrun-litellm-proxy`)** : Audit avancé de la posture de sécurité (réseau, IAM, secrets, exposition).
