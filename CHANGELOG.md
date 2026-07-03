@@ -5,6 +5,12 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-07-03] - Daily Log - Audit de sécurité des dépendances (supply chain) — 2e itération
+
+- **Remédiation multi-CVE nginx (`gke-base-sample`)** : Bump de l'image `nginxinc/nginx-unprivileged` `1.27-alpine` → `1.29-alpine` (résout vers `1.29.8`) dans `k8s/nginx.yaml`. La branche `1.27.x` ne reçoit plus de rétroportage de sécurité (seuls les tags `1.28.3+`/`1.29.7+` sont corrigés côté nginx.org) et reste exposée à CVE-2025-23419 (réutilisation de session SSL), CVE-2026-28753 (injection `auth_http`/XCLIENT), CVE-2026-28755 (contournement OCSP en mode stream), CVE-2026-27651 (NULL pointer deref CRAM-MD5/APOP) et aux débordements mémoire CVE-2026-27654/CVE-2026-27784/CVE-2026-32647. Confirmé via `nginx.org/en/security_advisories.html` et les tags Docker Hub (`nginxinc/nginx-unprivileged:1.29.8-alpine`, publié 2026-05-11).
+- **Périmètre re-audité (couvert cette fois, accès réseau disponible)** : `pip-audit` sur `samples/cloudrun-service/app/requirements.txt` (Flask 3.1.3 / gunicorn 22.0.0 — aucune vulnérabilité résiduelle), image `ghcr.io/berriai/litellm:v1.86.2` (`cloudrun-litellm-proxy`) vérifiée sans vulnérabilité connue via l'API OSV (les CVE 2026 LiteLLM — SQLi GHSA-r75f-5x8p-qvmc, bypass Host header GHSA-4xpc-pv4p-pm3w, bypass JWT CVE-2026-35030, supply-chain GHSA-5mg7-485q-xm76 — sont toutes corrigées avant ou ne s'appliquent pas à cette version), providers Terraform (`hashicorp/google`, `google-beta`, `random`, `null`, `time`, `http`, `ncecere/litellm`) sans avis de sécurité connu (OSV) et avec contraintes `~>` correctement bornées sur les 7 fichiers `providers.tf` du repo, hooks pre-commit (`gitleaks` v8.30.1, `pre-commit-terraform` v1.108.0, `pre-commit-hooks` v6.0.0) confirmés déjà à jour sur les 3 configurations du repo (racine, `base`, `gce-g2-gpu-instance`).
+- **PR #5 (gunicorn 22.0.0→26.0.0, majeur)** : toujours en DRAFT, non fusionnée, non modifiée — en attente de validation humaine, hors périmètre de cette itération.
+
 ## [2026-06-24] - Daily Log - Audit de sécurité des dépendances (supply chain)
 
 - **Remédiation CVE-2026-27205 (`cloudrun-service`)** : Bump Flask 3.0.3 → 3.1.3 pour corriger la vulnérabilité de cache HTTP (GHSA-68rp-wp8r-4726). L'en-tête `Vary: Cookie` n'était pas systématiquement positionné lors des accès à la session via l'opérateur `in`, ce qui pouvait exposer des réponses authentifiées à des caches intermédiaires. Confirmé et résolu via `pip-audit` (aucune vulnérabilité résiduelle).
