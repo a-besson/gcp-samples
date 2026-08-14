@@ -25,7 +25,7 @@ resource "google_service_networking_connection" "private_vpc_connection" {
 
 module "cloudsql" {
   source  = "terraform-google-modules/sql-db/google//modules/postgresql"
-  version = "~> 22.0"
+  version = "~> 28.0"
 
   name             = "litellm-db${var.name_suffix}"
   database_version = "POSTGRES_15"
