@@ -4,7 +4,7 @@
 
 module "lb_http" {
   source  = "terraform-google-modules/lb-http/google//modules/serverless_negs"
-  version = "~> 12.0"
+  version = "~> 14.0"
 
   name    = "exposed-service-lb${var.name_suffix}"
   project = var.project_id
