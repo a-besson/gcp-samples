@@ -85,8 +85,8 @@
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 6.0 |
-| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 6.0 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 7.0 |
+| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 7.0 |
 | <a name="requirement_litellm"></a> [litellm](#requirement\_litellm) | ~> 2.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
 
@@ -94,7 +94,7 @@
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
+| <a name="provider_google"></a> [google](#provider\_google) | 7.46.1 |
 | <a name="provider_litellm"></a> [litellm](#provider\_litellm) | 2.1.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
@@ -103,7 +103,7 @@
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_cloudsql"></a> [cloudsql](#module\_cloudsql) | terraform-google-modules/sql-db/google//modules/postgresql | ~> 22.0 |
+| <a name="module_cloudsql"></a> [cloudsql](#module\_cloudsql) | terraform-google-modules/sql-db/google//modules/postgresql | ~> 28.0 |
 | <a name="module_project_services"></a> [project\_services](#module\_project\_services) | terraform-google-modules/project-factory/google//modules/project_services | ~> 18.0 |
 
 ## Resources
