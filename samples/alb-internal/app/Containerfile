@@ -1,0 +1,28 @@
+# Builder: Docker Hardened maven+JDK25 image (dhi.io/eclipse-temurin's -dev
+# variant ships a JDK+shell but no Maven, and bootstrapping mvnw needs Maven
+# already present - so the dedicated `maven` DHI image is used instead).
+ARG BUILDER_IMAGE=dhi.io/maven:3.9-jdk25-alpine3.23-dev
+# Runtime: JRE-only, non-root user, no shell.
+ARG RUNTIME_IMAGE=dhi.io/eclipse-temurin:25-alpine3.23
+
+FROM ${BUILDER_IMAGE} AS builder
+WORKDIR /build
+COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
+COPY src ./src
+RUN mvn -B -q clean package -DskipTests
+
+FROM ${RUNTIME_IMAGE}
+# --chown creates /app owned by nonroot as it copies: this runtime stage has
+# no shell (hardened, no -dev variant), so there is no RUN chown to fix up a
+# root-owned WORKDIR afterwards. WORKDIR below only needs to cd into the
+# already-existing, already-owned directory.
+COPY --from=builder --chown=nonroot:nonroot /build/target/*.jar /app/app.jar
+WORKDIR /app
+USER nonroot
+EXPOSE 8080
+# -Djava.io.tmpdir=/app works around a known DHI bug where java.io.tmpdir
+# defaults to /tmp, a directory that does not exist in this image
+# (docker-hardened-images/catalog#225). /app is writable by nonroot (see
+# --chown above).
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-Djava.io.tmpdir=/app", "-jar", "/app/app.jar"]

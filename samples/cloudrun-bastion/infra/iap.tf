@@ -2,7 +2,7 @@
 # Using the existing project brand (only one allowed per project)
 resource "google_iap_client" "bastion_iap_client" {
   display_name = "Bastion IAP Client"
-  brand        = "projects/${var.project_number}/brands/${var.project_number}"
+  brand        = "projects/${data.google_project.this.number}/brands/${data.google_project.this.number}"
 }
 
 # --- IAP Access Binding ---

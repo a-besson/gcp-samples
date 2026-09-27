@@ -10,7 +10,6 @@ vars:
   ENVIRONMENT: cloudrun-bastion
   REPO_NAME: "cloudrun-bastion{{.NAME_SUFFIX}}"
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/bastion:latest"
-  PROJECT_NUMBER: "{{.TF_VAR_project_number}}"
   IAP_USER_EMAIL: "{{.TF_VAR_iap_user_email}}"
   ENDPOINT_SERVICE: "bastion{{.NAME_SUFFIX}}.endpoints.{{.PROJECT_ID}}.cloud.goog"
 
@@ -57,14 +56,14 @@ tasks:
     dir: infra
     deps: [init]
     cmds:
-      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
   apply:
     desc: "Apply Terraform changes"
     dir: infra
     deps: [init, undelete-dns, build]
     cmds:
-      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
   undelete-dns:
     desc: "Undelete the Cloud Endpoints service if it's in a soft-deleted state"
@@ -76,19 +75,26 @@ tasks:
     dir: infra
     deps: [init]
     cmds:
-      - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+      - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
   test:
     desc: "Run Terraform tests"
     dir: infra
     deps: [init]
     cmds:
-      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="project_number={{.PROJECT_NUMBER}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
   review:
     desc: "Run pre-commit hooks on all files"
     cmds:
       - pre-commit run --all-files
+
+  cyber-scan:
+    desc: "Run security scans: KICS on infra/, Trivy on the built image"
+    deps: [build]
+    cmds:
+      - kics scan -p infra --exclude-paths "**/.terraform/**"
+      - trivy image --severity HIGH,CRITICAL --ignore-unfixed {{.IMAGE_NAME}}
 
   bastion-run:
     desc: "Run the Bastion container locally for testing (Port 1080 -> 8080)"

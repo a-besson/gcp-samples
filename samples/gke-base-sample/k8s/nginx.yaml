@@ -71,11 +71,17 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
+          # KICS flags the cache/run mounts as writable "OS directory" paths,
+          # but they're pod-local emptyDir volumes (no hostPath), required
+          # writable because readOnlyRootFilesystem is true above — nginx
+          # needs to write its cache and pid file somewhere.
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            # kics-scan ignore-line
             - name: cache
               mountPath: /var/cache/nginx
+            # kics-scan ignore-line
             - name: run
               mountPath: /var/run
       volumes:

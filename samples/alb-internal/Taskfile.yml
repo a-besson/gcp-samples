@@ -1,0 +1,197 @@
+version: '3'
+
+dotenv:
+  - ../../.env
+
+vars:
+  NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
+  REGION_BE: europe-west1 # overrides the root .env REGION (europe-west9): this sample is pinned to Belgium
+  ZONE_BE: europe-west1-b
+  IAP_USER_EMAIL: '{{.TF_VAR_iap_user_email}}'
+  REPO_NAME: 'alb-internal{{.NAME_SUFFIX}}'
+  IMAGE: '{{.REGION_BE}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/api:latest'
+  BUILDER_IMAGE: '{{.DHI_BUILDER_IMAGE | default "dhi.io/maven:3.9-jdk25-alpine3.23-dev"}}'
+  RUNTIME_IMAGE: '{{.DHI_RUNTIME_IMAGE | default "dhi.io/eclipse-temurin:25-alpine3.23"}}'
+  TF_VARS: '-var="project_id={{.PROJECT_ID}}" -var="region={{.REGION_BE}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"'
+  # infra/bootstrap declares no iap_user_email variable: its own var set, not TF_VARS.
+  BOOTSTRAP_TF_VARS: '-var="project_id={{.PROJECT_ID}}" -var="region={{.REGION_BE}}" -var="name_suffix={{.NAME_SUFFIX}}"'
+
+tasks:
+  default:
+    desc: Liste toutes les commandes du sample.
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Crée le bucket GCS d'état (idempotent)."
+    cmds:
+      - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION_BE}} gs://{{.PROJECT_ID}}-tfstate || true
+      - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
+
+  bootstrap:
+    desc: "Crée les ressources create-once (KMS, Artifact Registry) via infra/bootstrap. Jamais détruit par `task destroy`."
+    dir: infra/bootstrap
+    deps: [setup]
+    cmds:
+      - |
+        terraform init \
+          -backend-config="bucket={{.PROJECT_ID}}-tfstate" \
+          -backend-config="prefix=alb-internal-bootstrap" \
+          -reconfigure
+      - terraform apply --auto-approve {{.BOOTSTRAP_TF_VARS}}
+
+  build:
+    desc: "Build et push l'image de l'API vers Artifact Registry (Docker Hardened Image)."
+    dir: app
+    deps: [bootstrap]
+    cmds:
+      - gcloud auth print-access-token | podman login -u oauth2accesstoken --password-stdin {{.REGION_BE}}-docker.pkg.dev
+      - podman build --platform linux/amd64 --build-arg BUILDER_IMAGE={{.BUILDER_IMAGE}} --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE}} -f Containerfile -t {{.IMAGE}} .
+      - podman push {{.IMAGE}}
+
+  init:
+    desc: "Initialise Terraform (infra/) avec le backend GCS."
+    dir: infra
+    cmds:
+      - |
+        terraform init \
+          -backend-config="bucket={{.PROJECT_ID}}-tfstate" \
+          -backend-config="prefix=alb-internal" \
+          -reconfigure {{.CLI_ARGS}}
+
+  plan:
+    desc: "Terraform plan (infra/)."
+    dir: infra
+    deps: [init]
+    cmds:
+      - terraform plan {{.TF_VARS}}
+
+  apply:
+    desc: "Déploiement complet : bootstrap KMS/AR, build+push de l'image, puis apply de la stack principale."
+    dir: infra
+    deps: [init, build]
+    cmds:
+      - terraform apply --auto-approve {{.TF_VARS}}
+
+  ssh:
+    desc: "Ouvre une session SSH vers la VM cliente via tunnel IAP."
+    cmds:
+      - gcloud compute ssh alb-internal-client{{.NAME_SUFFIX}} --tunnel-through-iap --zone {{.ZONE_BE}} --project {{.PROJECT_ID}}
+
+  e2e:
+    desc: "Test E2E : 302 sans jeton, 201 puis 200 avec un JWT auto-signé présenté via la VM cliente (tunnel IAP). Doit être lancé par l'identité TF_VAR_iap_user_email (seule à détenir serviceAccountTokenCreator sur le SA de la VM cliente, cf. iam.tf)."
+    dir: infra
+    cmds:
+      - |
+        set -e
+        HOST=$(terraform output -raw api_host)
+        AUD=$(terraform output -raw api_url)
+        SA_EMAIL="alb-internal-client{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
+        VM=$(terraform output -raw client_vm_name)
+        ZONE=$(terraform output -raw client_vm_zone)
+
+        # 1. JWT auto-signé, minté LOCALEMENT (l'opérateur a un vrai accès
+        #    Internet ; la VM, elle, est en deny-all-egress et ne peut PAS
+        #    appeler iamcredentials.googleapis.com - cf. iam.tf). `aud` utilise
+        #    le wildcard /* : les requêtes ciblent /api/items, pas la racine.
+        NOW=$(date +%s)
+        EXP=$((NOW + 3600))
+        JWT=$(python3 -c '
+        import json, subprocess, sys, urllib.request
+
+        sa_email, aud, now, exp = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+        claim = json.dumps({"iss": sa_email, "sub": sa_email, "aud": aud, "iat": now, "exp": exp})
+        token = subprocess.run(["gcloud", "auth", "print-access-token"], capture_output=True, check=True, text=True).stdout.strip()
+
+        req = urllib.request.Request(
+            f"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{sa_email}:signJwt",
+            data=json.dumps({"payload": claim}).encode(),
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json; charset=utf-8"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req) as resp:
+            print(json.load(resp)["signedJwt"])
+        ' "$SA_EMAIL" "${AUD}/*" "$NOW" "$EXP")
+
+        # 2. Tout le reste s'exécute SUR la VM (seule à pouvoir joindre le VIP
+        #    interne de l'ALB, dans subnet-isolated) : négatif sans jeton,
+        #    puis écriture + lecture avec le JWT injecté depuis l'opérateur.
+        gcloud compute ssh "$VM" --tunnel-through-iap --zone "$ZONE" --project {{.PROJECT_ID}} --command "
+          echo '--- 1. Sans jeton (attendu: 302) ---'
+          curl -sk -o /dev/null -w '%{http_code}\n' 'https://${HOST}/api/items'
+          echo '--- 2. POST avec JWT (attendu: 201) ---'
+          curl -sk -X POST -H 'Authorization: Bearer ${JWT}' -H 'Content-Type: application/json' -d '{\"name\":\"smoke-test\"}' -w '\n%{http_code}\n' 'https://${HOST}/api/items'
+          echo '--- 3. GET avec JWT (attendu: 200) ---'
+          curl -sk -H 'Authorization: Bearer ${JWT}' -w '\n%{http_code}\n' 'https://${HOST}/api/items'
+        "
+
+  e2e-cyber:
+    desc: "Test E2E sécurité : vérifie que Cloud Armor est actif sur le backend service (WAF SQLi/XSS en query string, SQLi en corps JSON, rate-limit + ban), via la VM cliente (tunnel IAP). Aucun JWT nécessaire : Cloud Armor est évalué avant IAP."
+    dir: infra
+    cmds:
+      - |
+        set -e
+        HOST=$(terraform output -raw api_host)
+        VM=$(terraform output -raw client_vm_name)
+        ZONE=$(terraform output -raw client_vm_zone)
+
+        gcloud compute ssh "$VM" --tunnel-through-iap --zone "$ZONE" --project {{.PROJECT_ID}} --command="bash -s -- $HOST" < ../scripts/e2e-cyber.sh
+
+  test:
+    desc: "Exécute infra/tests/*.tftest.hcl hors-ligne (mock_provider, aucun credential GCP requis)."
+    dir: infra
+    cmds:
+      - terraform init -backend=false -input=false
+      - terraform test
+
+  destroy:
+    desc: "Détruit la stack principale (jamais bootstrap). Ordre géré : Cloud Run d'abord, puis attente de libération des IP Direct VPC Egress, puis le reste."
+    dir: infra
+    deps: [init]
+    cmds:
+      # Exception ciblée à la règle "pas de -target" : le VPC appartient à ce
+      # sample, et les IP éphémères du Direct VPC Egress de Cloud Run
+      # bloquent la suppression des subnets tant que le service existe.
+      - terraform destroy -target=google_cloud_run_v2_service.api --auto-approve {{.TF_VARS}}
+      - task: wait-for-serverless-cleanup
+      - terraform destroy --auto-approve {{.TF_VARS}}
+
+  wait-for-serverless-cleanup:
+    internal: true
+    cmds:
+      - |
+        echo "⏳ Attente de la libération des IP éphémères (Direct VPC Egress)..."
+        TIMEOUT=180
+        START_TIME=$(date +%s)
+        while true; do
+          ADDRESSES=$(gcloud compute addresses list --project {{.PROJECT_ID}} --filter="name ~ serverless-ipv4" --format="value(name)" 2>/dev/null || echo "GCLOUD_FAILED")
+          if [ "$ADDRESSES" = "GCLOUD_FAILED" ] || [ -z "$ADDRESSES" ]; then
+            echo "✅ IP libérées (ou gcloud indisponible : pause de sécurité)."
+            [ "$ADDRESSES" = "GCLOUD_FAILED" ] && sleep 60
+            break
+          fi
+          CURRENT_TIME=$(date +%s)
+          if [ $((CURRENT_TIME - START_TIME)) -ge $TIMEOUT ]; then
+            echo "⚠️  Timeout atteint : la destruction du VPC peut échouer."
+            break
+          fi
+          sleep 10
+        done
+
+  destroy-bootstrap:
+    desc: "WARNING: détruit KMS/Artifact Registry. Le key ring et les clés NE PEUVENT PAS être supprimés de GCP (état 'scheduled for destruction' 24h, puis résiduel indéfiniment). À n'utiliser qu'en fin de démonstration."
+    dir: infra/bootstrap
+    cmds:
+      - terraform destroy --auto-approve {{.BOOTSTRAP_TF_VARS}}
+
+  review:
+    desc: "Exécute pre-commit sur l'ensemble du dépôt."
+    cmds:
+      - pre-commit run --all-files
+
+  cyber-scan:
+    desc: "Scans de sécurité : KICS sur infra/, Trivy sur l'image buildée."
+    deps: [build]
+    cmds:
+      - kics scan -p infra --exclude-paths "**/.terraform/**"
+      - trivy image --severity HIGH,CRITICAL --ignore-unfixed {{.IMAGE}}

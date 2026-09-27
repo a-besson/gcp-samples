@@ -68,3 +68,8 @@ tasks:
     desc: Run pre-commit hooks on all files
     cmds:
       - pre-commit run --all-files
+
+  cyber-scan:
+    desc: Run KICS security scan on the Terraform IaC
+    cmds:
+      - kics scan -p infra --exclude-paths "**/.terraform/**"

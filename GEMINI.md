@@ -1,13 +1,10 @@
 # Gemini — LLM-Specific Instructions
 
-> Read [AGENT.md](AGENT.md) first. It contains the full project configuration (persona, rules, skills, coding standards, workflow).
+> Read [AGENT.md](AGENT.md) first. It contains the full project configuration (persona, tech stack, project-specific standards, workflow).
 
-## File References
+## Rules & Skills
 
-Gemini uses markdown links to reference project files. When citing rules or skills, use relative links:
-
-- Rules: `[rule-name](.agents/rules/<file>.md)`
-- Skills: `[skill-name](.agents/skills/<folder>/SKILL.md)`
+Rules and skills are managed globally at the workstation level, not mirrored locally in this repository. `AGENT.md` documents only what is specific to `gcp-samples`.
 
 ## Formatting
 

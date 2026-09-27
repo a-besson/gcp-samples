@@ -191,6 +191,13 @@ tasks:
     cmds:
       - pre-commit run --all-files
 
+  cyber-scan:
+    desc: "Run security scans: KICS on infra/, Trivy on the built image"
+    deps: [build]
+    cmds:
+      - kics scan -p infra --exclude-paths "**/.terraform/**"
+      - trivy image --severity HIGH,CRITICAL --ignore-unfixed {{.IMAGE_NAME}}
+
   destroy:
     desc: "Destroy all resources (WARNING: deletes Cloud SQL data)"
     dir: infra

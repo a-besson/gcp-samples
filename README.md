@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>A curated collection of industrial-grade Google Cloud Platform samples</strong><br/>
+  <strong>Google Cloud Platform Samples</strong><br/>
   Terraform · Cloud Run · GKE · Security by Design · CI/CD
 </p>
 
@@ -20,8 +20,9 @@ Install the required tools before running any sample:
 **macOS (Homebrew)**
 
 ```bash
-brew install terraform go-task/tap/go-task trivy pre-commit tflint terraform-docs gitleaks libpq
-brew install --cask google-cloud-sdk
+brew install terraform go-task/tap/go-task trivy pre-commit terraform-docs gitleaks libpq
+# tflint is a Homebrew cask (terraform-linters/tap), not a formula
+brew install --cask google-cloud-sdk terraform-linters/tap/tflint
 # On macOS, link libpq to get psql
 echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> ~/.zshrc
 ```
@@ -42,8 +43,11 @@ sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/b
 curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
   | sh -s -- -b /usr/local/bin
 
-# tflint
-curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+# tflint (the old install_linux.sh one-liner was retired; verified binary download instead)
+curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_amd64.zip \
+  && curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/checksums.txt \
+  && sha256sum --ignore-missing -c checksums.txt \
+  && unzip tflint_linux_amd64.zip && sudo mv tflint /usr/local/bin/
 
 # terraform-docs
 curl -sSLo terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/latest/download/terraform-docs-linux-amd64.tar.gz \
@@ -73,6 +77,7 @@ gcloud config set project <YOUR_PROJECT_ID>
 
 | Name | Description | README |
 |---|---|---|
+| [alb-internal](samples/alb-internal/) | API Spring Boot 4/Java 25 sur Cloud Run derrière un ALB régional interne, Cloud Armor, IAP et Cloud SQL PostgreSQL CMEK via PSC. | [→ README](samples/alb-internal/README.md) |
 | [base](samples/base/) | Déploiement du réseau VPC de base avec sous-réseaux isolés. | [→ README](samples/base/README.md) |
 | [cloudrun-simple-service](samples/cloudrun-simple-service/) | Service web Cloud Run Python déployé sur VPC privé avec Terraform. | [→ README](samples/cloudrun-simple-service/README.md) |
 | [cloudrun-simple-job](samples/cloudrun-simple-job/) | Job Cloud Run Python pour exécution de batchs asynchrones. | [→ README](samples/cloudrun-simple-job/README.md) |
@@ -87,17 +92,12 @@ gcloud config set project <YOUR_PROJECT_ID>
 
 ```text
 gcp-samples/
-├── AGENT.md              # Shared AI agent config (persona, rules, skills, standards)
+├── AGENT.md              # Project-specific AI agent config (persona, tech stack, standards)
 ├── GEMINI.md             # LLM-specific instructions (Gemini CLI / Antigravity)
 ├── CLAUDE.md             # LLM-specific instructions (Claude Code)
-├── .agents/              # Shared AI agent rules & skills (single source of truth)
-│   ├── rules/            # Mandatory rules (security, guidelines)
-│   └── skills/
-│       ├── best-practice/ # Core engineering standards (Terraform, Taskfile, Pre-commit)
-│       ├── community/     # Third-party skills (Hashicorp, drawio)
-│       └── the-documentalist/ # Documentation standards
-├── .claude/rules/        # Symlinks → .agents/rules/ (Claude Code compatibility)
+│                         # Rules & skills are managed globally at the workstation level (~/.claude/), not mirrored in this repo.
 ├── samples/              # GCP use-case samples
+│   ├── alb-internal/
 │   ├── base/
 │   ├── cloudrun-service/
 │   ├── cloudrun-job/

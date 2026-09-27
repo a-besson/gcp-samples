@@ -1,14 +1,7 @@
 # Claude — LLM-Specific Instructions
 
-> Read @AGENT.md first. It contains the full project configuration (persona, rules, skills, coding standards, workflow).
+> Read @AGENT.md first. It contains the full project configuration (persona, tech stack, project-specific standards, workflow).
 
-## File References
+## Rules & Skills
 
-Claude uses `@` syntax to import files. When referencing rules or skills, use:
-
-- Rules: `@.agents/rules/<file>.md`
-- Skills: `@.agents/skills/<folder>/SKILL.md`
-
-## Auto-Loaded Rules
-
-Claude Code automatically loads rules from `.claude/rules/`. These are symlinks to `.agents/rules/` (shared source of truth). Do not duplicate rule content.
+Rules and skills are managed globally at the workstation level (`~/.claude/rules/`, `~/.claude/skills/`) — this repository no longer ships a local `.agents/` or `.claude/` mirror. Global rules (guidelines, dev-practices, doc-practices, secret-handling, security-prompt) apply automatically to every project; `AGENT.md` documents only what is specific to `gcp-samples` on top of them.

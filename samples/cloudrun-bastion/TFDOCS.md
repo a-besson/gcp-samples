@@ -7,8 +7,8 @@
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | ~> 6.0 |
-| <a name="requirement_null"></a> [null](#requirement\_null) | >= 3.0.0 |
-| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0.0 |
+| <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.2 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
 | <a name="requirement_time"></a> [time](#requirement\_time) | ~> 0.11 |
 
 ## Providers
@@ -16,7 +16,7 @@
 | Name | Version |
 | ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.8.1 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
@@ -43,6 +43,7 @@
 | [google_sql_user.users](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user) | resource |
 | [random_id.db_name_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [random_password.db_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [google_project.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
 ## Inputs
@@ -52,7 +53,6 @@
 | <a name="input_iap_user_email"></a> [iap\_user\_email](#input\_iap\_user\_email) | Email of the user or group granted IAP-secured Web App User access (e.g., user@example.com). | `string` | n/a | yes |
 | <a name="input_name_suffix"></a> [name\_suffix](#input\_name\_suffix) | Suffix for the resource names (e.g. -dev or -test). | `string` | `"-sample"` | no |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The Google Cloud Project ID. | `string` | n/a | yes |
-| <a name="input_project_number"></a> [project\_number](#input\_project\_number) | The Google Cloud Project Number (numeric ID). | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The GCP region to deploy the Cloud Run service. | `string` | `"europe-west1"` | no |
 
 ## Outputs

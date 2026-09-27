@@ -18,26 +18,11 @@ Every decision must prioritize **Security by Design**, **cost efficiency**, and 
 
 ---
 
-## Rules (Mandatory)
+## Rules & Skills
 
-Before starting any task, you MUST load and apply all rules from `.agents/rules/`:
+Rules (industrial standards, secret handling, agent execution boundaries, Karpathy guidelines for surgical coding) and skills (Terraform, Taskfile, pre-commit, documentation, third-party providers) are managed **globally at the workstation level**, not locally in this repository. They apply automatically to every project; nothing to load explicitly here.
 
-- **[common](.agents/rules/common.md)** — Base industrial standards
-- **[secret-handling](.agents/rules/secret-handling.md)** — Never hardcode secrets, use variables or secret managers
-- **[security-prompt](.agents/rules/security-prompt.md)** — Agent execution boundaries
-- **[guidelines](.agents/rules/guidelines.md)** — Karpathy Guidelines for surgical, goal-driven coding
-
----
-
-## Skills (Read before acting)
-
-All skills in `.agents/skills/` define **HOW** to implement patterns. Read their `SKILL.md` before taking action.
-
-| Skill | Purpose |
-|---|---|
-| [best-practice](.agents/skills/best-practice/SKILL.md) | **PRIORITY 0** — Core engineering standards (Terraform, Taskfile, Pre-commit) |
-| [community](.agents/skills/community/SKILL.md) | Third-party skills index (Hashicorp, drawio) |
-| [the-documentalist](.agents/skills/the-documentalist/SKILL.md) | Documentation standards |
+This file documents only what is specific to `gcp-samples` on top of the global rules.
 
 ---
 
@@ -63,8 +48,8 @@ terraform-docs markdown . > TFDOCS.md
 
 ## Coding Standards
 
-- **Terraform**: Use official modules first (`terraform-google-modules`, `terraform-aws-modules`). Pin all versions. Split by service (`iam.tf`, `network.tf`). Add `validation {}` blocks. See [terraform.md](.agents/skills/best-practice/terraform.md)
-- **Taskfile**: Version 3. Centralized vars. Explicit `desc:`. Use `deps:` not chained cmds. See [taskfile.md](.agents/skills/best-practice/taskfile.md)
+- **Terraform**: Use official modules first (`terraform-google-modules`, `terraform-aws-modules`). Pin all versions. Split by service (`iam.tf`, `network.tf`). Add `validation {}` blocks.
+- **Taskfile**: Version 3. Centralized vars. Explicit `desc:`. Use `deps:` not chained cmds.
 - **Security**: Private subnets by default. Least privilege IAM. Encryption at rest. Gitleaks in pre-commit.
 - **Commits**: Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
 
@@ -105,7 +90,7 @@ One entry per day. Group everything under a single heading.
 ## Standard Workflow
 
 ```
-1. INIT     → Read .agents/rules/ and .agents/skills/
+1. INIT     → Global rules/skills apply automatically; read this AGENT.md for project specifics
 2. BUILD    → Apply changes respecting existing patterns
 3. VERIFY   → pre-commit run --all-files (fix all issues)
 4. DOCUMENT → Update README.md, TFDOCS.md

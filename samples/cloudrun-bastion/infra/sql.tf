@@ -22,9 +22,16 @@ resource "google_sql_database_instance" "postgres" {
       role = "bastion-database"
     }
 
+    # KICS: public IP is intentional here (see README "No Public Ingress") —
+    # 0.0.0.0/0 is never an authorized network, so the only path in is an
+    # IAM-authenticated tunnel via Cloud SQL Auth Proxy. KICS also flags SSL
+    # here on the deprecated `require_ssl` attribute instead of `ssl_mode`,
+    # which is already set below.
+    # kics-scan ignore-block
     ip_configuration {
       ipv4_enabled    = true
       private_network = data.terraform_remote_state.base.outputs.network_self_link
+      ssl_mode        = "ENCRYPTED_ONLY"
     }
   }
 
