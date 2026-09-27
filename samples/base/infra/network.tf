@@ -1,6 +1,6 @@
 module "vpc" {
   source  = "terraform-google-modules/network/google"
-  version = "~> 16.0"
+  version = "~> 18.0"
 
   project_id   = var.project_id
   network_name = local.vpc_name
@@ -63,7 +63,7 @@ module "cloud_nat" {
 
 module "firewall_rules" {
   source  = "terraform-google-modules/network/google//modules/firewall-rules"
-  version = "~> 16.0"
+  version = "~> 18.0"
 
   project_id   = var.project_id
   network_name = module.vpc.network_name
