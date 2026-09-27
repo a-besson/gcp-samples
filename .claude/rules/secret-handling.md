@@ -1,1 +1,0 @@
-../../.agents/rules/secret-handling.md

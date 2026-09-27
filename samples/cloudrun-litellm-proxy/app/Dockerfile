@@ -5,6 +5,9 @@ WORKDIR /app
 
 COPY config.yaml /app/config.yaml
 
+# Base image (apko/Wolfi) already ships an unprivileged "nonroot" account.
+USER nonroot
+
 EXPOSE 4000
 
 # LiteLLM resolves --config from the path; LITELLM_CONFIG_PATH env is set by

@@ -81,7 +81,12 @@ task tf-apply
 task tf-test
 ```
 
-5. **Déclencher le job manuellement** :
+5. **Test E2E** (déclenche une exécution réelle du job et attend qu'elle se termine avec succès) :
+```bash
+task e2e
+```
+
+6. **Déclencher le job manuellement** :
 ```bash
 gcloud run jobs execute hello-world-job --region europe-west9 --project YOUR_PROJECT_ID
 ```
@@ -101,6 +106,7 @@ gcloud run jobs execute hello-world-job --region europe-west9 --project YOUR_PRO
 | `task tf-apply` | Applique l'infrastructure |
 | `task tf-destroy` | Détruit l'infrastructure |
 | `task tf-test` | Lance les tests unitaires Terraform |
+| `task e2e` | Test E2E sur l'infra déjà déployée : déclenche une exécution réelle du job, attend `Completed` |
 | `task all` | Exécute tous les scans + tests + plan |
 
 ---

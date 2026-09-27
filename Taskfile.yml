@@ -3,31 +3,22 @@ version: '3'
 dotenv: [.env]
 
 vars:
-  SKILLS_CLI: npx -y skills
-  SKILLS:
-    - new-terraform-provider
-    - bahayonghang/drawio-skills@drawio
-    - provider-resources
-    - provider-actions
-    - refactor-module
-    - terraform-style-guide
-    - terraform-stacks
-    - terraform-test
-    - psql-shell
-
   BREW_DEPS:
     - node
     - terraform
     - go-task/tap/go-task
     - trivy
     - pre-commit
-    - tflint
     - terraform-docs
     - gitleaks
     - libpq
     - kubectl
+  # tflint is distributed as a Homebrew cask (terraform-linters/tap), not a
+  # formula: `brew install tflint` fails ("No available formula"), and the
+  # older `terraform-linters/tflint` tap has been retired (404 on GitHub).
   BREW_CASKS:
     - google-cloud-sdk
+    - terraform-linters/tap/tflint
 
 tasks:
   apply-all:
@@ -45,6 +36,8 @@ tasks:
   apply-samples:
     internal: true
     cmds:
+      - task: terraform-cmd
+        vars: { DIR: "samples/alb-internal", CMD: "apply" }
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-bastion", CMD: "apply" }
       - task: terraform-cmd
@@ -72,6 +65,8 @@ tasks:
     internal: true
     cmds:
       - task: terraform-cmd
+        vars: { DIR: "samples/alb-internal", CMD: "destroy" }
+      - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-bastion", CMD: "destroy" }
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-job", CMD: "destroy" }
@@ -86,6 +81,8 @@ tasks:
     cmds:
       - task: terraform-cmd
         vars: { DIR: "samples/base", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/alb-internal", CMD: "test" }
       - task: terraform-cmd
         vars: { DIR: "samples/cloudrun-bastion", CMD: "test" }
       - task: terraform-cmd
@@ -142,10 +139,9 @@ tasks:
       - pre-commit run --all-files
 
   init:
-    desc: "Configuration complète du projet : installation des dépendances système et des skills IA."
+    desc: "Configuration complète du projet : installation des dépendances système."
     cmds:
       - task: deps-install
-      - task: skills
 
   deps-install:
     desc: "Installe les dépendances système via Homebrew (macOS)."
@@ -162,25 +158,6 @@ tasks:
         cmd: brew uninstall {{.ITEM}} || true
       - for: { var: BREW_CASKS }
         cmd: brew uninstall --cask {{.ITEM}} || true
-
-  skills:
-    desc: "Installe et met à jour les dépendances skills IA (uniquement pour l'agent antigravity)."
-    cmds:
-      - cmd: mkdir -p .agents/skills/community
-      - for: { var: SKILLS }
-        cmd: "{{.SKILLS_CLI}} add hashicorp/agent-skills --skill {{.ITEM}} --agent antigravity -y"
-      - cmd: "{{.SKILLS_CLI}} update -y || echo 'Update skipped'"
-      - for: { var: SKILLS }
-        cmd: "mv .agents/skills/{{.ITEM}} .agents/skills/community/ 2>/dev/null || true"
-      - cmd: "rm -r .claude .kiro 2>/dev/null || true"
-
-  uninstall-skills:
-    desc: "Désinstalle tous les skills IA du projet et nettoie le dossier community."
-    cmds:
-      - for: { var: SKILLS }
-        cmd: "{{.SKILLS_CLI}} remove {{.ITEM}} -y || echo '{{.ITEM}} already removed'"
-      - cmd: "rm -r .agents/skills/community 2>/dev/null || true"
-      - cmd: "rm -r .claude .kiro 2>/dev/null || true"
 
   default:
     desc: "Liste toutes les commandes du projet."

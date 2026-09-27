@@ -63,6 +63,11 @@ tasks:
     cmds:
       - terraform destroy --auto-approve
 
+  cyber-scan:
+    desc: "Run KICS security scan on the Terraform IaC"
+    cmds:
+      - kics scan -p infra --exclude-paths "**/.terraform/**"
+
   get-credentials:
     desc: "Configure kubectl to connect to the GKE cluster"
     cmds:

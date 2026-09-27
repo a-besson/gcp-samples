@@ -64,6 +64,20 @@ The test logic:
 3. Performs an `http` call to the URL.
 4. Asserts that the response status is `200 OK`.
 
+### 🔍 `task e2e` — Smoke Test on Already-Deployed Infrastructure
+
+Unlike `task test` (which applies its own throwaway infra), `task e2e` assumes `task apply` has already run and exercises the real, already-deployed `exposed-service`:
+
+```bash
+task e2e
+```
+
+1. Unauthenticated request → expects `403`.
+2. Request with an identity token impersonating `test_sa`, direct to Cloud Run → expects `200`.
+3. Same token, via the Load Balancer IP → expects `200` (allow 5–10 min after a first `apply` for the LB to be fully operational).
+
+Runs under the operator's own identity, not the Taskfile's ambient `sa-iac` impersonation: it's the operator who is granted `roles/iam.serviceAccountTokenCreator` on `test_sa` (`infra/iam.tf`), needed to mint that identity token.
+
 ---
 
 ## 📁 Project Structure

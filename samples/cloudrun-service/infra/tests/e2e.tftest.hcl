@@ -14,7 +14,7 @@ run "verify_authenticated_access" {
   command = apply
 
   variables {
-    url             = run.apply_infrastructure.service_url
+    url             = run.apply_infrastructure.exposed_service_url
     tester_sa_email = run.apply_infrastructure.tester_sa_email
   }
 

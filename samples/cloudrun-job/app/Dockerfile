@@ -6,4 +6,7 @@ WORKDIR /app
 
 COPY job.py .
 
+RUN useradd -r -u 1000 appuser
+USER appuser
+
 CMD ["python", "job.py"]

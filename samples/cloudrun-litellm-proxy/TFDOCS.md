@@ -96,7 +96,7 @@
 | ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
 | <a name="provider_litellm"></a> [litellm](#provider\_litellm) | 0.3.16 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.9.0 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules

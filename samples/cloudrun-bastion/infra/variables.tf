@@ -23,11 +23,6 @@ variable "iap_user_email" {
   }
 }
 
-variable "project_number" {
-  description = "The Google Cloud Project Number (numeric ID)."
-  type        = string
-}
-
 variable "name_suffix" {
   description = "Suffix for the resource names (e.g. -dev or -test)."
   type        = string

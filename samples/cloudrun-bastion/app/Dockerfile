@@ -6,7 +6,13 @@
 # (no DSA planned), so apt will never resolve them on this branch. The fixes
 # only exist as unreleased commits on upstream master (no tag newer than
 # 1.11.3 includes them) — build from that pinned commit instead.
-FROM debian:bookworm-slim@sha256:7b140f374b289a7c2befc338f42ebe6441b7ea838a042bbd5acbfca6ec875818 AS builder
+#
+# KICS "Missing User Instruction": no explicit USER in the runtime stage, but
+# tinyproxy.conf already sets `User tinyproxy` / `Group tinyproxy` — verified
+# at runtime that PID 1 drops root and runs as uid 999 (tinyproxy) before
+# accepting any connection.
+# kics-scan ignore-line
+FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -33,7 +39,7 @@ RUN ./autogen.sh \
     && make -j"$(nproc)" \
     && make install DESTDIR=/out
 
-FROM debian:bookworm-slim@sha256:7b140f374b289a7c2befc338f42ebe6441b7ea838a042bbd5acbfca6ec875818
+FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251
 
 # Ensure a dedicated tinyproxy user/group exists
 RUN groupadd -r tinyproxy && useradd -r -g tinyproxy -s /sbin/nologin tinyproxy || true

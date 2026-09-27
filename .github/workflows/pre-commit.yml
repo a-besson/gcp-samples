@@ -1,0 +1,57 @@
+name: Pre-commit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # Kept in sync with the version contributors get from `brew install
+  # terraform-docs` (root README Prerequisites) - see the daily-log entry
+  # for the CI/local table-format mismatch this version bump fixed.
+  TERRAFORM_DOCS_VERSION: "0.24.0"
+  # sha256sum of terraform-docs-v0.24.0-linux-amd64.tar.gz, pinned from the
+  # project's published checksums (release assets), verified before use.
+  TERRAFORM_DOCS_SHA256: "9005daf969de0b50134493a2c00078b49f5f5b39d021cda7c89bf4d4f3d776d3"
+
+jobs:
+  pre-commit:
+    name: pre-commit (all files)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.x"
+
+      # terraform_fmt/terraform_validate hooks shell out to a system `terraform` binary.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_wrapper: false
+
+      # terraform_tflint hook shells out to a system `tflint` binary.
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4.1.1
+
+      # terraform_docs hook shells out to a system `terraform-docs` binary;
+      # no official setup-action exists, so install the pinned release and
+      # verify its checksum before use.
+      - name: Install terraform-docs
+        run: |
+          asset="terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          curl -sSLO "https://github.com/terraform-docs/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/${asset}"
+          echo "${TERRAFORM_DOCS_SHA256}  ${asset}" | sha256sum -c -
+          tar -xzf "${asset}" terraform-docs
+          sudo install -m 0755 terraform-docs /usr/local/bin/terraform-docs
+          rm -f "${asset}" terraform-docs
+          terraform-docs --version
+
+      - name: Run pre-commit
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1

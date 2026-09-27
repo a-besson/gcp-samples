@@ -1,0 +1,5 @@
+target/
+.git/
+*.tfstate*
+.env
+.venv/
