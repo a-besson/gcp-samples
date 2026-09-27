@@ -19,7 +19,7 @@ module "vpc" {
 # Cloud NAT for downloading drivers and models
 module "cloud_nat" {
   source        = "terraform-google-modules/cloud-nat/google"
-  version       = "~> 5.0"
+  version       = "~> 7.0"
   project_id    = var.project_id
   region        = var.region
   router        = "llm-router"

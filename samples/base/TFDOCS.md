@@ -22,7 +22,7 @@
 | <a name="module_artifact_registry_bastion"></a> [artifact\_registry\_bastion](#module\_artifact\_registry\_bastion) | GoogleCloudPlatform/artifact-registry/google | ~> 0.8 |
 | <a name="module_artifact_registry_job"></a> [artifact\_registry\_job](#module\_artifact\_registry\_job) | GoogleCloudPlatform/artifact-registry/google | ~> 0.8 |
 | <a name="module_artifact_registry_service"></a> [artifact\_registry\_service](#module\_artifact\_registry\_service) | GoogleCloudPlatform/artifact-registry/google | ~> 0.8 |
-| <a name="module_cloud_nat"></a> [cloud\_nat](#module\_cloud\_nat) | terraform-google-modules/cloud-nat/google | ~> 5.0 |
+| <a name="module_cloud_nat"></a> [cloud\_nat](#module\_cloud\_nat) | terraform-google-modules/cloud-nat/google | ~> 7.0 |
 | <a name="module_firewall_rules"></a> [firewall\_rules](#module\_firewall\_rules) | terraform-google-modules/network/google//modules/firewall-rules | ~> 18.0 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-google-modules/network/google | ~> 18.0 |
 
