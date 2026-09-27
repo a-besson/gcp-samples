@@ -48,7 +48,7 @@ Ce projet déploie une instance GCE (G2 + NVIDIA L4) sécurisée pour l'héberge
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_cloud_nat"></a> [cloud\_nat](#module\_cloud\_nat) | terraform-google-modules/cloud-nat/google | ~> 5.0 |
+| <a name="module_cloud_nat"></a> [cloud\_nat](#module\_cloud\_nat) | terraform-google-modules/cloud-nat/google | ~> 7.0 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-google-modules/network/google | ~> 18.0 |
 
 ## Resources
