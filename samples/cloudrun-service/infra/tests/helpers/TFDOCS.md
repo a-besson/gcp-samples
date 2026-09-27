@@ -6,14 +6,14 @@
 | Name | Version |
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9.0 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 6.50 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 7.0 |
 | <a name="requirement_http"></a> [http](#requirement\_http) | ~> 3.5 |
 
 ## Providers
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
+| <a name="provider_google"></a> [google](#provider\_google) | 7.46.1 |
 | <a name="provider_http"></a> [http](#provider\_http) | 3.6.2 |
 
 ## Modules
