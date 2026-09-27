@@ -20,7 +20,7 @@
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_lb_http"></a> [lb\_http](#module\_lb\_http) | terraform-google-modules/lb-http/google//modules/serverless_negs | ~> 12.0 |
+| <a name="module_lb_http"></a> [lb\_http](#module\_lb\_http) | terraform-google-modules/lb-http/google//modules/serverless_negs | ~> 14.0 |
 | <a name="module_project_services"></a> [project\_services](#module\_project\_services) | terraform-google-modules/project-factory/google//modules/project_services | ~> 18.0 |
 
 ## Resources
