@@ -15,7 +15,7 @@ terraform {
     }
     litellm = {
       source  = "ncecere/litellm"
-      version = "~> 0.3"
+      version = "~> 2.0"
     }
   }
   backend "gcs" {}

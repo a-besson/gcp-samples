@@ -87,7 +87,7 @@
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | ~> 6.0 |
 | <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 6.0 |
-| <a name="requirement_litellm"></a> [litellm](#requirement\_litellm) | ~> 0.3 |
+| <a name="requirement_litellm"></a> [litellm](#requirement\_litellm) | ~> 2.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
 
 ## Providers
@@ -95,7 +95,7 @@
 | Name | Version |
 | ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | 6.50.0 |
-| <a name="provider_litellm"></a> [litellm](#provider\_litellm) | 0.3.16 |
+| <a name="provider_litellm"></a> [litellm](#provider\_litellm) | 2.1.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
