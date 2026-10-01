@@ -292,7 +292,7 @@ Set `min_instances=0` and `cloudsql_tier=db-f1-micro` to minimise idle cost. Set
 ```text
 cloudrun-litellm-proxy/
 ├── app/
-│   ├── Dockerfile               # pinned LiteLLM v1.86.2
+│   ├── Dockerfile               # pinned LiteLLM v1.88.6
 │   └── config.yaml              # models + database_url + store_model_in_db=false
 ├── docs/
 │   ├── user-management.md       # User lifecycle, virtual keys, budgets

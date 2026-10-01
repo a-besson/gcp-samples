@@ -5,6 +5,10 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-10-01] - Daily Log - Bump LiteLLM v1.86.2 → v1.88.6 (GHSA-3cv6-jpf6-8222)
+
+- **`cloudrun-litellm-proxy`** : image `ghcr.io/berriai/litellm` `v1.86.2` → `v1.88.6` (digest multi-arch `sha256:0c73da8d…`, vérifié via l'API registre GHCR). Corrige GHSA-3cv6-jpf6-8222 / PYSEC-2026-4066 (SSRF authentifié + exfiltration des credentials provider, CVSS 3.1 AV:N/AC:L/PR:L/C:H, MODERATE ; corrigé en 1.88.6 sur cette branche). OSV : aucune vulnérabilité connue sur `litellm` 1.88.6.
+
 ## [2026-09-27] - Daily Log - Nettoyage des variables et de `.env.example`
 
 - **Migration de la configuration IA vers le niveau workstation** : suppression de `.agents/` (règles + skills) et `.claude/` (symlinks de règles + skill drawio), désormais gérés au niveau du home (`~/.claude/rules/`, `~/.claude/skills/`), plus de miroir local dans ce dépôt. Mise à jour en conséquence : `CLAUDE.md`/`GEMINI.md` (racine) ne référencent plus `.agents/rules/`/`.agents/skills/`, `AGENT.md` ne garde que la configuration propre à `gcp-samples` (persona, stack, contrainte de labeling GCP, commandes, changelog, FinOps) et renvoie aux règles/skills globaux pour le reste. `README.md` : arbre `Project Structure` mis à jour (suppression des entrées `.agents/`/`.claude/rules/`). `Taskfile.yml` (racine) : suppression des tâches `skills`/`uninstall-skills` (qui auraient recréé `.agents/skills/community/` via `npx skills` + `hashicorp/agent-skills`, à l'opposé de la nouvelle gestion globale) et des vars `SKILLS`/`SKILLS_CLI` devenues orphelines ; `task init` ne dépend plus de la tâche `skills` supprimée (aurait cassé `task init` avec une erreur "task not found").
