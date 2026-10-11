@@ -1,12 +1,6 @@
 name: build-cloudrun-bastion
 
 on:
-  push:
-    paths:
-      - "samples/cloudrun-bastion/**"
-      - ".github/workflows/_build-sample.yml"
-      - ".github/workflows/build-cloudrun-bastion.yml"
-      - ".tflint.hcl"
   pull_request:
     paths:
       - "samples/cloudrun-bastion/**"

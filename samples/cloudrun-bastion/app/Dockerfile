@@ -12,7 +12,7 @@
 # at runtime that PID 1 drops root and runs as uid 999 (tinyproxy) before
 # accepting any connection.
 # kics-scan ignore-line
-FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS builder
+FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -39,7 +39,12 @@ RUN ./autogen.sh \
     && make -j"$(nproc)" \
     && make install DESTDIR=/out
 
-FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251
+FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
+
+# Pick up Debian security fixes published after the pinned base image was built
+# (e.g. perl-base, libpcre2); unpinned on purpose, the base digest above stays the anchor.
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 # Ensure a dedicated tinyproxy user/group exists
 RUN groupadd -r tinyproxy && useradd -r -g tinyproxy -s /sbin/nologin tinyproxy || true

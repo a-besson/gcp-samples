@@ -8,9 +8,11 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 ## [2026-10-11] - Daily Log - CI GitHub Actions hors-ligne (build, qualité, cyber) et retrait de `cloudrun-litellm-proxy`
 
 - **Remplacement des workflows `pre-commit.yml` / `samples-ci.yml`** par `check-quality.yml` (`pre-commit run --all-files`), `check-cyber.yml` (KICS, Trivy `config` + `fs`, scan d'image Trivy par Dockerfile/Containerfile) et un workflow `build-<sample>.yml` par sample appelant le workflow réutilisable `_build-sample.yml` (`terraform fmt` → `init -backend=false` + `validate` sur chaque racine → `tflint` → `terraform test` hors-ligne pour `alb-internal` → build Maven). Aucun credential cloud ; actions épinglées par SHA, `permissions: contents: read`.
+- **Déclenchement** : tous les workflows ne se lancent que sur `pull_request` (aucun trigger `push`, il doublonnerait la PR).
 - **Configuration partagée** : `.tflint.hcl` (utilisée par le hook pre-commit via `--config` et par la CI), `kics.config`, `trivy.yaml`, `.trivyignore.yaml` (exceptions Trivy limitées à un chemin et justifiées).
 - **Retrait du sample `cloudrun-litellm-proxy`** (commit séparé) ; l'historique des entrées précédentes de ce fichier le mentionnant n'est pas réécrit.
 - **Documentation** : `README.md` racine — arbre du projet et section « CI ».
+- **Correctifs CVE remontés par le scan d'image Trivy** (jobs `trivy-image` rouges, HIGH/CRITICAL avec correctif disponible) : `alb-internal` — Spring Boot 4.0.7 → 4.0.8 (spring-webmvc 7.0.9) et override `jackson-2-bom.version` 2.21.7 / `jackson-bom.version` 3.1.7 dans `pom.xml` ; `cloudrun-bastion`, `cloudrun-job`, `cloudrun-service` — digests des images de base Debian/Python rafraîchis ; `cloudrun-bastion` — `apt-get upgrade` dans l'étage runtime (perl-base/libpcre2 non encore dans l'image de base) ; `cloudrun-job` — `pip` désinstallé (ses msgpack/setuptools/urllib3 embarqués sont vulnérables, `job.py` n'utilise que la stdlib). Vérifié localement : `trivy image` (config `trivy.yaml`, `--ignore-unfixed`) sans finding sur les 3 images reconstruites, `trivy rootfs` à 0 sur le JAR, `mvn verify` OK.
 
 ---
 

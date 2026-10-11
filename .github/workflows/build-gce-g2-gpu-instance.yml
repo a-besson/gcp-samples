@@ -1,12 +1,6 @@
 name: build-gce-g2-gpu-instance
 
 on:
-  push:
-    paths:
-      - "samples/gce-g2-gpu-instance/**"
-      - ".github/workflows/_build-sample.yml"
-      - ".github/workflows/build-gce-g2-gpu-instance.yml"
-      - ".tflint.hcl"
   pull_request:
     paths:
       - "samples/gce-g2-gpu-instance/**"
