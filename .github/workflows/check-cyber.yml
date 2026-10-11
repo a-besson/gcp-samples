@@ -1,0 +1,119 @@
+# Repository-wide security scans: KICS (IaC) + Trivy (config, vulnerabilities, secrets, container images).
+name: check-cyber
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: check-cyber-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  kics:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write # upload SARIF
+      actions: read # code scanning reads the workflow run (private repository)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: KICS scan
+        run: |
+          mkdir -p "$RUNNER_TEMP/kics"
+          docker run --rm -v "$PWD:/path:ro" -v "$RUNNER_TEMP/kics:/out" docker.io/checkmarx/kics:v2.1.20 \
+            scan -p /path --config /path/kics.config -o /out --report-formats sarif,json
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        # reporting only: code scanning is unavailable on a private repository without Advanced Security,
+        # the scan itself still fails the job on findings
+        continue-on-error: true
+        if: always() && hashFiles('**/kics/results.sarif') != ''
+        with:
+          sarif_file: ${{ runner.temp }}/kics/results.sarif
+          category: kics
+
+  trivy:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write # upload SARIF
+      actions: read # code scanning reads the workflow run (private repository)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          trivy-config: trivy.yaml
+          format: sarif
+          output: trivy-config.sarif
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret
+          trivy-config: trivy.yaml
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        # reporting only: code scanning is unavailable on a private repository without Advanced Security,
+        # the scan itself still fails the job on findings
+        continue-on-error: true
+        if: always() && hashFiles('trivy-config.sarif') != ''
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy
+
+  # One entry per Dockerfile/Containerfile found under samples/, so a new
+  # containerised sample is scanned without editing this workflow.
+  images:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.list.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: List container builds
+        id: list
+        run: |
+          entries="[]"
+          while IFS= read -r file; do
+            sample="$(echo "$file" | cut -d/ -f2)"
+            # Docker Hardened Images (dhi.io) need an authenticated pull.
+            if grep -qi 'dhi\.io' "$file"; then dhi=true; else dhi=false; fi
+            entries="$(jq -c --arg name "$sample" --arg file "$file" --arg context "$(dirname "$file")" --argjson dhi "$dhi" \
+              '. + [{"name": $name, "file": $file, "context": $context, "dhi": $dhi}]' <<<"$entries")"
+          done < <(find samples -maxdepth 4 \( -iname 'Containerfile' -o -iname 'Dockerfile' \) -not -path '*/.terraform/*' | sort)
+          echo "matrix={\"include\":$entries}" >> "$GITHUB_OUTPUT"
+
+  trivy-image:
+    name: trivy-image (${{ matrix.name }})
+    needs: images
+    if: needs.images.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.images.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Documented exception to "no secret in the workflow": Docker Hardened Images
+      # (alb-internal's Containerfile) cannot be pulled anonymously. Configure
+      # DHI_USERNAME/DHI_TOKEN as repository secrets; only the dhi.io samples use them.
+      - name: Login to Docker Hardened Images
+        if: matrix.dhi
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+        run: echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin
+      - name: Build - container image
+        env:
+          CONTAINER_FILE: ${{ matrix.file }}
+          CONTEXT: ${{ matrix.context }}
+          IMAGE: sample-${{ matrix.name }}-${{ strategy.job-index }}:ci
+        run: docker build -f "$CONTAINER_FILE" -t "$IMAGE" "$CONTEXT"
+      # Fails the job on fixable HIGH/CRITICAL findings (severity and exit-code come from
+      # trivy.yaml). Accepted findings are scoped and justified in .trivyignore.yaml.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: sample-${{ matrix.name }}-${{ strategy.job-index }}:ci
+          scanners: vuln,secret
+          ignore-unfixed: true
+          trivy-config: trivy.yaml

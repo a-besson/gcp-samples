@@ -1,0 +1,13 @@
+# Trivy shared configuration (used by the check-cyber workflow and `trivy` locally).
+severity:
+  - HIGH
+  - CRITICAL
+exit-code: 1
+# Scoped, justified exceptions live in this file (never a global exit-code override)
+ignorefile: .trivyignore.yaml
+scan:
+  # Downloaded provider binaries, virtualenvs and Maven output are not repository dependencies
+  skip-dirs:
+    - "**/.terraform"
+    - "**/.venv"
+    - "**/target"

@@ -1,0 +1,28 @@
+name: build-gke-base-sample
+
+on:
+  push:
+    paths:
+      - "samples/gke-base-sample/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-gke-base-sample.yml"
+      - ".tflint.hcl"
+  pull_request:
+    paths:
+      - "samples/gke-base-sample/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-gke-base-sample.yml"
+      - ".tflint.hcl"
+
+concurrency:
+  group: build-gke-base-sample-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-sample.yml
+    with:
+      sample: gke-base-sample
