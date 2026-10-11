@@ -1,0 +1,94 @@
+# Reusable build for one sample: lint, syntax check, offline tests (Terraform) and build (Java).
+# No cloud credentials: everything runs offline (no backend, mock providers).
+name: build-sample
+
+on:
+  workflow_call:
+    inputs:
+      sample:
+        description: Sample directory name under samples/
+        required: true
+        type: string
+      terraform-test:
+        description: Run `terraform test` (only for samples whose tests use mock providers)
+        required: false
+        default: false
+        type: boolean
+      java:
+        description: Build the Maven project under samples/<sample>/app
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: terraform (${{ inputs.sample }})
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: samples/${{ inputs.sample }}/infra
+    env:
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+      SAMPLE: ${{ inputs.sample }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.5
+          terraform_wrapper: false
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .terraform.d/plugin-cache
+          key: tf-plugins-${{ inputs.sample }}-${{ hashFiles(format('samples/{0}/**/*.tf', inputs.sample)) }}
+          restore-keys: tf-plugins-${{ inputs.sample }}-
+      - name: Prepare plugin cache
+        run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
+      - name: Lint - terraform fmt
+        run: terraform fmt -check -recursive
+      # A sample can hold several Terraform roots (e.g. infra/ and infra/bootstrap/):
+      # initialise and validate every root found, without a real backend.
+      - name: Syntax - terraform init and validate (no backend)
+        run: |
+          while IFS= read -r root; do
+            echo "::group::terraform validate ($root)"
+            terraform -chdir="$root" init -backend=false -input=false
+            terraform -chdir="$root" validate
+            echo "::endgroup::"
+          done < <(find . -name '*.tf' -not -path '*/.terraform/*' -exec dirname {} \; | sort -u)
+      - name: Lint - tflint
+        run: |
+          tflint --init --config="$GITHUB_WORKSPACE/.tflint.hcl"
+          tflint --config="$GITHUB_WORKSPACE/.tflint.hcl" --recursive --call-module-type=all
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Tests - terraform test (offline)
+        if: inputs.terraform-test
+        run: terraform test
+
+  java:
+    name: java (${{ inputs.sample }})
+    if: inputs.java
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: samples/${{ inputs.sample }}/app
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: samples/${{ inputs.sample }}/app/pom.xml
+      - name: Build - mvn compile
+        run: mvn --batch-mode --no-transfer-progress compile
+      - name: Tests - mvn test
+        run: mvn --batch-mode --no-transfer-progress test
+      - name: Build - mvn package
+        run: mvn --batch-mode --no-transfer-progress package
+      - name: Build - mvn verify
+        run: mvn --batch-mode --no-transfer-progress verify

@@ -103,8 +103,28 @@ gcp-samples/
 │   ├── cloudrun-job/
 │   ├── cloudrun-bastion/
 │   └── gke-base-sample/
-└── .pre-commit-config.yaml
+├── .github/workflows/    # CI (no cloud credentials): see "CI" below
+├── .pre-commit-config.yaml
+├── .tflint.hcl           # Shared TFLint config (pre-commit + CI)
+├── kics.config           # Shared KICS config (task/CI)
+├── trivy.yaml            # Shared Trivy config (CI)
+└── .trivyignore.yaml     # Scoped, justified Trivy exceptions
 ```
+
+---
+
+## 🔁 CI
+
+GitHub Actions workflows live in `.github/workflows/`. CI is offline: it never runs `plan`, `apply` or e2e tests and holds no cloud credentials (the only secrets are `DHI_USERNAME`/`DHI_TOKEN`, used to pull Docker Hardened Images for the container scan).
+
+| Workflow | Role |
+|---|---|
+| `build-<sample>.yml` (x7) | One per sample, filtered on `samples/<sample>/**`: `terraform fmt` → `init -backend=false` + `validate` (every root) → `tflint` → `terraform test` (offline mock providers, `alb-internal` only) and, for `alb-internal`, `mvn compile/test/package/verify` |
+| `_build-sample.yml` | Reusable workflow called by every `build-*` |
+| `check-quality.yml` | Repo-wide `pre-commit run --all-files` (gitleaks, fmt, validate, tflint, generated `TFDOCS.md`) |
+| `check-cyber.yml` | Repo-wide KICS, Trivy `config` + `fs` (vuln, secret) and a Trivy image scan per Dockerfile/Containerfile |
+
+Adding a sample means adding a `build-<sample>.yml` caller (copy an existing one). Actions are pinned by commit SHA and every workflow uses `permissions: contents: read`. Run the same scans locally with `pre-commit run --all-files` and `trivy config --config trivy.yaml .`.
 
 ---
 

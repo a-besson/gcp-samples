@@ -5,6 +5,15 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-10-11] - Daily Log - CI GitHub Actions hors-ligne (build, qualité, cyber) et retrait de `cloudrun-litellm-proxy`
+
+- **Remplacement des workflows `pre-commit.yml` / `samples-ci.yml`** par `check-quality.yml` (`pre-commit run --all-files`), `check-cyber.yml` (KICS, Trivy `config` + `fs`, scan d'image Trivy par Dockerfile/Containerfile) et un workflow `build-<sample>.yml` par sample appelant le workflow réutilisable `_build-sample.yml` (`terraform fmt` → `init -backend=false` + `validate` sur chaque racine → `tflint` → `terraform test` hors-ligne pour `alb-internal` → build Maven). Aucun credential cloud ; actions épinglées par SHA, `permissions: contents: read`.
+- **Configuration partagée** : `.tflint.hcl` (utilisée par le hook pre-commit via `--config` et par la CI), `kics.config`, `trivy.yaml`, `.trivyignore.yaml` (exceptions Trivy limitées à un chemin et justifiées).
+- **Retrait du sample `cloudrun-litellm-proxy`** (commit séparé) ; l'historique des entrées précédentes de ce fichier le mentionnant n'est pas réécrit.
+- **Documentation** : `README.md` racine — arbre du projet et section « CI ».
+
+---
+
 ## [2026-09-27] - Daily Log - Nettoyage des variables et de `.env.example`
 
 - **Migration de la configuration IA vers le niveau workstation** : suppression de `.agents/` (règles + skills) et `.claude/` (symlinks de règles + skill drawio), désormais gérés au niveau du home (`~/.claude/rules/`, `~/.claude/skills/`), plus de miroir local dans ce dépôt. Mise à jour en conséquence : `CLAUDE.md`/`GEMINI.md` (racine) ne référencent plus `.agents/rules/`/`.agents/skills/`, `AGENT.md` ne garde que la configuration propre à `gcp-samples` (persona, stack, contrainte de labeling GCP, commandes, changelog, FinOps) et renvoie aux règles/skills globaux pour le reste. `README.md` : arbre `Project Structure` mis à jour (suppression des entrées `.agents/`/`.claude/rules/`). `Taskfile.yml` (racine) : suppression des tâches `skills`/`uninstall-skills` (qui auraient recréé `.agents/skills/community/` via `npx skills` + `hashicorp/agent-skills`, à l'opposé de la nouvelle gestion globale) et des vars `SKILLS`/`SKILLS_CLI` devenues orphelines ; `task init` ne dépend plus de la tâche `skills` supprimée (aurait cassé `task init` avec une erreur "task not found").

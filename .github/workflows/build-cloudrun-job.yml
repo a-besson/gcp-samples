@@ -1,0 +1,28 @@
+name: build-cloudrun-job
+
+on:
+  push:
+    paths:
+      - "samples/cloudrun-job/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-cloudrun-job.yml"
+      - ".tflint.hcl"
+  pull_request:
+    paths:
+      - "samples/cloudrun-job/**"
+      - ".github/workflows/_build-sample.yml"
+      - ".github/workflows/build-cloudrun-job.yml"
+      - ".tflint.hcl"
+
+concurrency:
+  group: build-cloudrun-job-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build-sample.yml
+    with:
+      sample: cloudrun-job
