@@ -53,70 +53,60 @@ Batch Python job exécuté sur **Cloud Run (v2)** avec isolation réseau via VPC
 task deps-install   # depuis la racine du dépôt
 ```
 
+Le réseau est lu depuis le state du sample [`base`](../base/README.md) : appliquez-le d'abord.
+
 ### Déploiement
 
-1. **Configurer les variables** dans le fichier `.env` à la racine du projet :
-```env
-PROJECT_ID="votre-project-id"
-REGION="europe-west9"
-IMAGE_JOB="europe-west9-docker.pkg.dev/your-project/cloudrun-simple-job/app:latest"
-NETWORK="your-vpc-name"
-SUBNET="your-subnet-name"
-```
+1. **Configurer les variables** : copier `.env.example` en `.env` à la racine du dépôt et renseigner `PROJECT_ID` et `REGION`. L'image (`image_job`) est dérivée du `Taskfile.yml` (`<REGION>-docker.pkg.dev/<PROJECT_ID>/cloudrun-simple-job-sample/job:latest`) : aucune variable supplémentaire.
 
-2. **Builder et pousser l'image** :
+2. **Provisionner l'infrastructure** (`apply` construit et pousse d'abord l'image) :
 ```bash
-task build
-task push
+task plan
+task apply
 ```
 
-3. **Provisionner l'infrastructure** :
+3. **Tester l'infra** (tests Terraform) :
 ```bash
-task tf-plan
-task tf-apply
+task test
 ```
 
-4. **Tester l'infra** :
-```bash
-task tf-test
-```
-
-5. **Test E2E** (déclenche une exécution réelle du job et attend qu'elle se termine avec succès) :
+4. **Test E2E** (déclenche une exécution réelle du job et attend qu'elle se termine avec succès) :
 ```bash
 task e2e
 ```
 
-6. **Déclencher le job manuellement** :
+5. **Déclencher le job manuellement** :
 ```bash
-gcloud run jobs execute hello-world-job --region europe-west9 --project YOUR_PROJECT_ID
+gcloud run jobs execute hello-world-job --region <REGION> --project <PROJECT_ID>
 ```
 
 ---
 
 ## 📋 Task Commands
 
+Toutes les commandes se lancent depuis `samples/cloudrun-job/` (`task --list` pour la liste à jour).
+
 | Commande | Description |
 |---|---|
-| `task build` | Build l'image Docker du job |
-| `task push` | Push l'image vers Artifact Registry |
-| `task scan-trivy` | Scan de vulnérabilités sur l'image |
-| `task scan-kics` | Scan KICS de l'IaC Terraform |
-| `task tf-init` | Initialise Terraform |
-| `task tf-plan` | Calcule le plan Terraform |
-| `task tf-apply` | Applique l'infrastructure |
-| `task tf-destroy` | Détruit l'infrastructure |
-| `task tf-test` | Lance les tests unitaires Terraform |
+| `task setup` | Crée le bucket de state GCS et le dépôt Artifact Registry (idempotent) |
+| `task build` | Build l'image Docker (Podman) et la pousse vers Artifact Registry |
+| `task init` | Initialise Terraform avec le backend GCS |
+| `task plan` | Calcule le plan Terraform |
+| `task apply` | Applique l'infrastructure (construit et pousse l'image avant) |
+| `task destroy` | Détruit l'infrastructure |
+| `task test` | Lance les tests Terraform |
 | `task e2e` | Test E2E sur l'infra déjà déployée : déclenche une exécution réelle du job, attend `Completed` |
-| `task all` | Exécute tous les scans + tests + plan |
+| `task cyber-scan` | Scans de sécurité : KICS sur `infra/`, Trivy sur l'image construite |
+| `task review` | Lance `pre-commit` sur tout le dépôt |
 
 ---
 
 ## 📁 Project Structure
 
 ```text
-cloudrun-simple-job/
+cloudrun-job/
 ├── app/
-│   ├── Dockerfile        # Image Python slim
+│   ├── Dockerfile        # Image Python slim (pip retiré, cf. Trivy)
 │   └── job.py            # Logique du job batch
 ├── infra/
 │   ├── cloudrun.tf       # Cloud Run Job v2
@@ -126,7 +116,6 @@ cloudrun-simple-job/
 │   ├── outputs.tf        # Outputs utiles
 │   ├── providers.tf      # Provider Google + versions
 │   ├── variables.tf      # Variables d'entrée validées
-│   ├── .env (at project root)
 │   └── tests/
 │       └── unit_test.tftest.hcl
 ├── Taskfile.yml

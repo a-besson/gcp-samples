@@ -25,4 +25,3 @@ module "project_services" {
     "sqladmin.googleapis.com",
   ]
 }
-

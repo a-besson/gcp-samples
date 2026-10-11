@@ -8,7 +8,7 @@
 set -e
 
 # Default API values
-API_KEY="${GEMINI_API_KEY:-sk-cle-factice-litellm}"
+API_KEY="${GEMINI_API_KEY:-sk-local-dummy}"
 BASE_URL="${GOOGLE_AI_BASE_URL:-http://localhost:11434/v1}"
 
 # Handle Modes (fast/thinking)
@@ -72,18 +72,18 @@ DURATION_SEC=$(echo "scale=3; $DURATION_MS / 1000" | bc)
 # Parse response (requires jq)
 if command -v jq >/dev/null 2>&1; then
     CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
-    
+
     if [ "$CONTENT" == "null" ]; then
         echo "❌ Error response from LLM:"
         echo "$RESPONSE" | jq .
         exit 1
     fi
-    
+
     # Extract Token Usage
     PROMPT_TOKENS=$(echo "$RESPONSE" | jq -r '.usage.prompt_tokens // 0')
     COMPLETION_TOKENS=$(echo "$RESPONSE" | jq -r '.usage.completion_tokens // 0')
     TOTAL_TOKENS=$(echo "$RESPONSE" | jq -r '.usage.total_tokens // 0')
-    
+
     # Calculate tokens per second
     if [ "$COMPLETION_TOKENS" -gt 0 ] && [ "$DURATION_MS" -gt 0 ]; then
         TPS=$(echo "scale=2; $COMPLETION_TOKENS / $DURATION_SEC" | bc)

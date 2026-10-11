@@ -105,7 +105,7 @@ graph TD
     subgraph "Google Cloud Platform"
         B -->|Encrypted Tunnel| C{Cloud SQL API}
         C -->|IAM Check| D[Cloud SQL Instance]
-        
+
         subgraph "VPC Network"
             E[Bastion VPC]
             F[Google Services VPC]
@@ -146,7 +146,7 @@ PGPASSWORD=$DB_PASS psql -h 127.0.0.1 -p 5432 -U testuser -d testdb -c "SELECT v
 
 **Success Output:**
 ```text
-                                         version                                          
+                                         version
 ------------------------------------------------------------------------------------------
  PostgreSQL 15.17 on x86_64-pc-linux-gnu, compiled by Debian clang version 12.0.1, 64-bit
 (1 row)

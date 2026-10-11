@@ -119,4 +119,3 @@ gcloud compute ssh vm-test-public --zone europe-west9-c --tunnel-through-iap
 | `task test` | Run `terraform test` unit tests |
 | `task review` | Run pre-commit hooks (Gitleaks, fmt, docs, validate) |
 | `task destroy` | Destroy all infrastructure |
-
