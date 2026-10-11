@@ -1,12 +1,6 @@
 name: build-gke-base-sample
 
 on:
-  push:
-    paths:
-      - "samples/gke-base-sample/**"
-      - ".github/workflows/_build-sample.yml"
-      - ".github/workflows/build-gke-base-sample.yml"
-      - ".tflint.hcl"
   pull_request:
     paths:
       - "samples/gke-base-sample/**"

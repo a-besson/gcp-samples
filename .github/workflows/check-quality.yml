@@ -2,7 +2,6 @@
 name: check-quality
 
 on:
-  push:
   pull_request:
 
 concurrency:

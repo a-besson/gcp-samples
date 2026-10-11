@@ -1,12 +1,6 @@
 name: build-cloudrun-job
 
 on:
-  push:
-    paths:
-      - "samples/cloudrun-job/**"
-      - ".github/workflows/_build-sample.yml"
-      - ".github/workflows/build-cloudrun-job.yml"
-      - ".tflint.hcl"
   pull_request:
     paths:
       - "samples/cloudrun-job/**"

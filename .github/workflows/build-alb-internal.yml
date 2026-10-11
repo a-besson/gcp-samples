@@ -1,12 +1,6 @@
 name: build-alb-internal
 
 on:
-  push:
-    paths:
-      - "samples/alb-internal/**"
-      - ".github/workflows/_build-sample.yml"
-      - ".github/workflows/build-alb-internal.yml"
-      - ".tflint.hcl"
   pull_request:
     paths:
       - "samples/alb-internal/**"

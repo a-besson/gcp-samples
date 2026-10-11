@@ -1,6 +1,6 @@
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
+FROM python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
 
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True

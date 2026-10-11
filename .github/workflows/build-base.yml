@@ -1,12 +1,6 @@
 name: build-base
 
 on:
-  push:
-    paths:
-      - "samples/base/**"
-      - ".github/workflows/_build-sample.yml"
-      - ".github/workflows/build-base.yml"
-      - ".tflint.hcl"
   pull_request:
     paths:
       - "samples/base/**"
