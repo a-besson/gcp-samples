@@ -108,7 +108,7 @@ tasks:
         while true; do
           # Try to list addresses with gcloud
           ADDRESSES=$(gcloud compute addresses list --project ${PROJECT_ID} --filter="name ~ serverless-ipv4" --format="value(name)" 2>/dev/null || echo "GCLOUD_FAILED")
-          
+
           if [ "$ADDRESSES" = "GCLOUD_FAILED" ]; then
             echo "⚠️  gcloud command failed or not authenticated. Falling back to 60s sleep buffer."
             sleep 60
@@ -119,14 +119,14 @@ tasks:
             echo "✅ All ephemeral IPs released."
             break
           fi
-          
+
           CURRENT_TIME=$(date +%s)
           ELAPSED=$((CURRENT_TIME - START_TIME))
           if [ $ELAPSED -ge $TIMEOUT ]; then
             echo "⚠️  Timeout reached while waiting for IP release. VPC destruction might still fail."
             break
           fi
-          
+
           # Count addresses for display
           COUNT=$(echo "$ADDRESSES" | wc -l | xargs)
           echo "🔄 Still waiting for $COUNT IP(s) to be released... (elapsed: ${ELAPSED}s)"
@@ -134,7 +134,7 @@ tasks:
         done
 
   review:
-    desc: "Exécute les contrôles de qualité (pre-commit) et déclenche une revue approfondie par l'agent IA."
+    desc: "Exécute les contrôles de qualité (pre-commit) sur tout le dépôt."
     cmds:
       - pre-commit run --all-files
 

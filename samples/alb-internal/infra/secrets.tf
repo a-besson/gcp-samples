@@ -20,7 +20,7 @@ resource "google_secret_manager_secret" "db_password" {
 
 # Gotcha: random_password.db lives in the Terraform state (GCS-encrypted).
 # Documented in Security Design; a production deployment would seed this
-# out-of-band instead (see the "seed-key" pattern in cloudrun-litellm-proxy).
+# out-of-band instead.
 resource "google_secret_manager_secret_version" "db_password" {
   secret      = google_secret_manager_secret.db_password.id
   secret_data = random_password.db.result

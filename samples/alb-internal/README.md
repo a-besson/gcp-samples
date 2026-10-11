@@ -11,7 +11,7 @@ API **Spring Boot 4 / Java 25** sur **Cloud Run**, écrivant dans une base **Clo
 
 - VPC dédié (3 subnets : `subnet-isolated`, `subnet-isolated-application`, `subnet-proxy-only`), aucune dépendance à `samples/base`.
 - ALB régional interne (`INTERNAL_MANAGED`) → Cloud Armor régional (WAF CRS 4.22 + parsing JSON + rate-based ban) → IAP → NEG serverless → Cloud Run.
-- Cloud Run (Spring Boot 4.0.7 / Java 25) sur une image runtime **Docker Hardened Image**, avec sidecar **Cloud SQL Auth Proxy** (`--psc`).
+- Cloud Run (Spring Boot 4.0.8 / Java 25) sur une image runtime **Docker Hardened Image**, avec sidecar **Cloud SQL Auth Proxy** (`--psc`).
 - Cloud SQL PostgreSQL 17, connectivité privée via **Private Service Connect**, endpoint placé littéralement dans `subnet-isolated-application`.
 - **CMEK** (Cloud KMS) sur Cloud SQL, Cloud Run, Artifact Registry, Secret Manager, disque de la VM cliente — 5 clés, rotation 90 jours.
 - Pare-feu **deny-by-default** : allow ciblés par service account (VM) ou tag réseau (Cloud Run).
@@ -74,7 +74,7 @@ Conséquence, appliquée dans ce sample :
 
 ## 🔍 Statut de vérification
 
-Ce sample a été **entièrement écrit et vérifié hors-ligne**, jamais déployé (voir `AGENT.md` — FinOps : provisionner des ressources facturables nécessite un accord explicite préalable).
+Ce sample a été **entièrement écrit et vérifié hors-ligne**, jamais déployé (voir `AGENTS.md` — FinOps : provisionner des ressources facturables nécessite un accord explicite préalable).
 
 | Vérifié hors-ligne | Non vérifié (nécessite un vrai `apply`) |
 |---|---|
@@ -95,7 +95,7 @@ Ce sample a été **entièrement écrit et vérifié hors-ligne**, jamais déplo
 - **Pare-feu deny-by-default** : `deny-all-ingress`/`deny-all-egress` à la priorité 65533, puis 3 allow ciblés. **Conséquence assumée** : la VM cliente ne peut atteindre ni `logging.googleapis.com` ni aucune API Google réelle (seuls le serveur de métadonnées et le VIP de l'ILB sont joignables) — son service account **ne reçoit donc aucun rôle projet inutilisable** (pas même `roles/logging.logWriter`). Pour un accès `gcloud` complet depuis la VM : règle egress vers `199.36.153.8/30` + zone DNS privée `googleapis.com.` (non implémenté, voir « Pour aller plus loin »).
 - **CMEK partout** : 5 clés Cloud KMS séparées (Cloud SQL, Cloud Run, Artifact Registry, Secret Manager, disque VM), rotation 90 jours, key ring **volontairement indestructible** (`prevent_destroy`) dans une stack bootstrap séparée.
 - **IAM least-privilege** : SA dédié par workload (`alb-internal-api`, `alb-internal-client`), aucun rôle `editor`/`owner`, accès au secret DB scopé au secret (pas au projet).
-- **Secret en state** : `random_password` (mot de passe DB) vit dans le state Terraform (chiffré côté GCS). En production, générer hors-bande + seeder `google_secret_manager_secret_version` manuellement (pattern `task seed-key` de `cloudrun-litellm-proxy`).
+- **Secret en state** : `random_password` (mot de passe DB) vit dans le state Terraform (chiffré côté GCS). En production, générer hors-bande + seeder `google_secret_manager_secret_version` manuellement.
 - **Certificat TLS auto-signé** : les certificats Google-managed régionaux exigent Certificate Manager + une autorisation DNS **publique**, impossible pour un hostname purement interne (`api.alb-internal.internal`). `curl -k` est donc nécessaire. En production → Certificate Manager régional avec un domaine réel.
 - **Aucun secret ni identifiant réel** dans ce dépôt (placeholders `my-gcp-project-id`, `admin@example.com`).
 
@@ -271,6 +271,6 @@ alb-internal/
 - Certificate Manager régional pour un certificat TLS réel (nécessite un domaine public).
 - Accès `gcloud` complet depuis la VM cliente : règle egress vers `199.36.153.8/30` + zone DNS privée `googleapis.com.` → `private.googleapis.com`.
 - Cloud NAT si l'application a besoin d'un egress Internet direct.
-- `google_billing_budget` pour une alerte de coût automatisée (pattern `cloudrun-litellm-proxy`).
-- Pipelines CI GitHub Actions / GitLab CI (aucune n'existe encore dans ce dépôt).
+- `google_billing_budget` pour une alerte de coût automatisée.
+- Pipeline CD (déploiement) : la CI GitHub Actions du dépôt (`build-alb-internal.yml`) reste hors-ligne — pas de `plan`/`apply`/e2e, aucun credential cloud.
 - Diagramme `architecture.drawio` avec icônes GCP officielles.

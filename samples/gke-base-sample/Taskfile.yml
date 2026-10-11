@@ -138,4 +138,3 @@ tasks:
     desc: "Full application CI pipeline (build + docker)"
     cmds:
       - task --dir application ci
-
