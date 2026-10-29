@@ -111,6 +111,7 @@ gcp-samples/
 │                         # Global rules & skills live at the workstation level, not in this repo.
 ├── Taskfile.yml          # Root orchestration (apply-all, destroy-all, test-all, review)
 ├── CHANGELOG.md          # One "Daily Log" entry per day
+├── renovate.json         # Renovate dependency updates (automerge minor/patch, 7-day cooling-off)
 ├── .env.example          # Template of the shared .env read by every Taskfile
 ├── samples/              # GCP use-case samples
 │   ├── alb-internal/
@@ -142,6 +143,10 @@ GitHub Actions workflows live in `.github/workflows/` and run **on pull requests
 | `check-cyber.yml` | Repo-wide KICS, Trivy `config` + `fs` (vuln, secret) and a Trivy image scan per Dockerfile/Containerfile |
 
 Adding a sample means adding a `build-<sample>.yml` caller (copy an existing one). Actions are pinned by commit SHA and every workflow uses `permissions: contents: read`. Run the same checks locally with `pre-commit run --all-files`, `actionlint` and `trivy config --config trivy.yaml .`. Commit messages must follow Conventional Commits (`conventional-pre-commit`, run `pre-commit install` once: it installs the `pre-commit` and `commit-msg` hooks).
+
+### 🔄 Dependency updates
+
+[Renovate](https://docs.renovatebot.com/) (`renovate.json`) keeps GitHub Actions, Docker base images, Terraform providers/modules, pip and Maven dependencies, and `pre-commit` hook revisions up to date. Actions and images are pinned by digest, updates wait 7 days after release (`minimumReleaseAge`) and at most 5 PRs stay open. Minor/patch/digest updates are squash-automerged once the CI is green; major updates need approval from the Dependency Dashboard. The Renovate GitHub App must be installed on the repository.
 
 ---
 

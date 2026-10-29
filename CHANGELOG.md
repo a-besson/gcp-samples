@@ -5,6 +5,12 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-10-29] - Daily Log - Configuration Renovate
+
+- **`renovate.json`** ajouté à la racine, aligné sur la règle globale `renovate` : presets `config:recommended`, `helpers:pinGitHubActionDigests` et `docker:pinDigests` (images de base épinglées par digest, comme l'exige `AGENTS.md`), manager `pre-commit` activé, `minimumReleaseAge: 7 days`, `prConcurrentLimit: 5`, automerge en PR squash pour minor/patch/digest, `major` sans automerge et soumis à approbation via le Dependency Dashboard. `README.md` : arbre du projet et section « Dependency updates ». Validé avec `renovate-config-validator`. Limites connues : les images `dhi.io` du `Containerfile` d'`alb-internal` (registre privé) ne seront pas suivies sans `hostRules`, et les overrides CVE Jackson du `pom.xml` restent gérés à la main (`fix(deps):`). L'app Renovate doit être installée sur le dépôt.
+
+---
+
 ## [2026-10-11] - Daily Log - CI GitHub Actions hors-ligne (build, qualité, cyber), correctifs CVE, `AGENTS.md` unique et mise à jour de la documentation et des pratiques
 
 - **Remplacement des workflows `pre-commit.yml` / `samples-ci.yml`** par `check-quality.yml` (`pre-commit run --all-files`), `check-cyber.yml` (KICS, Trivy `config` + `fs`, scan d'image Trivy par Dockerfile/Containerfile) et un workflow `build-<sample>.yml` par sample appelant le workflow réutilisable `_build-sample.yml` (`terraform fmt` → `init -backend=false` + `validate` sur chaque racine → `tflint` → `terraform test` hors-ligne pour `alb-internal` → build Maven). Aucun credential cloud ; actions épinglées par SHA, `permissions: contents: read`.
