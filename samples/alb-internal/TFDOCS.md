@@ -15,11 +15,11 @@
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 7.46.1 |
-| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 7.46.1 |
+| <a name="provider_google"></a> [google](#provider\_google) | 7.46.2 |
+| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 7.46.2 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
-| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.4.1 |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | 4.4.2 |
 
 ## Modules
 

@@ -13,7 +13,7 @@
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 7.46.1 |
+| <a name="provider_google"></a> [google](#provider\_google) | 7.46.2 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
