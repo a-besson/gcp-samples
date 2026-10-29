@@ -14,8 +14,8 @@
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 7.46.1 |
-| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 7.46.1 |
+| <a name="provider_google"></a> [google](#provider\_google) | 7.46.2 |
+| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 7.46.2 |
 | <a name="provider_time"></a> [time](#provider\_time) | 0.14.2 |
 
 ## Modules

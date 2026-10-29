@@ -42,7 +42,7 @@ Ce projet déploie une instance GCE (G2 + NVIDIA L4) sécurisée pour l'héberge
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_google"></a> [google](#provider\_google) | 7.46.1 |
+| <a name="provider_google"></a> [google](#provider\_google) | 7.46.2 |
 
 ## Modules
 
