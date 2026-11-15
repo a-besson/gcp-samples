@@ -11,7 +11,7 @@ Batch Python job exécuté sur **Cloud Run (v2)** avec isolation réseau via VPC
 - **Cloud Run Job (v2)** — Job batch Python exécuté jusqu'à complétion
 - **Direct VPC Egress** — Tout le trafic transite par le VPC privé (`ALL_TRAFFIC`)
 - **Artifact Registry** — Dépôt Docker privé `cloudrun-simple-job<name_suffix>`, créé par le sample [`base`](../base/README.md) (module officiel GCP)
-- **IAM Least Privilege** — Service account dédié avec `logWriter` + `artifactregistry.reader`
+- **IAM Least Privilege** — Service account dédié avec `logWriter` uniquement (l'image est tirée par l'agent de service Cloud Run)
 - **Terraform Tests** — Validation unitaire de l'infrastructure avant déploiement
 
 ---
