@@ -51,7 +51,7 @@ graph TD
 | Rate limiting | `rate_based_ban`, pas `throttle` | Un simple `throttle` laisse l'attaquant sonder **indéfiniment** à exactement 100 req/min — le scénario d'énumération lente depuis une VM compromise. |
 | Accès BDD | Cloud SQL Auth Proxy en **sidecar** Cloud Run (`--psc`) | Tunnel mTLS + autorisation IAM, aucune exposition réseau directe de Postgres. |
 | Identité BDD | Utilisateur **built-in** + mot de passe en Secret Manager (CMEK) | Flyway a besoin de droits DDL (propriétaire du schéma) ; un utilisateur IAM SA ne possède pas le schéma `public` en PG15+. |
-| Migrations DB | `FlywayMigrationRunner` (`ApplicationRunner` custom, pas d'auto-configuration) | **Spring Boot 4.0 a sorti l'auto-configuration Flyway dans un module dédié** (`spring-boot-flyway`, apporté par `spring-boot-starter-flyway`), dont l'app ne dépend pas : avec `flyway-core` seul, rien n'appelle `migrate()`, donc `spring.flyway.*` n'a aucun effet. Migration explicite au démarrage via le `DataSource` de l'app, avant que la readiness probe ne puisse passer. |
+| Migrations DB | `spring-boot-starter-flyway` (auto-configuration) | **Spring Boot 4 a sorti l'auto-configuration Flyway dans un module dédié** (`spring-boot-flyway`, apporté par ce starter) : avec `flyway-core` seul, rien n'appelle `migrate()`. Le starter exécute les migrations au démarrage, avant JPA et donc avant que la readiness probe ne puisse passer ; `spring.flyway.*` est pris en compte. |
 | DB privée | **Private Service Connect** (pas Private Service Access) | Seule façon de placer littéralement l'endpoint de connectivité dans `subnet-isolated-application` (avec PSA, l'instance vit dans une plage peerée hors VPC). |
 | Chiffrement | CMEK sur Cloud SQL, Cloud Run, Artifact Registry, Secret Manager, disque VM | 5 clés distinctes = séparation des périmètres de révocation. Rotation 90 jours. Key ring **indestructible** → stack `infra/bootstrap` séparée. |
 | Pare-feu | `deny all` ingress+egress, puis allow par **service account** (VM) et **tag réseau** (Cloud Run) | `target_service_accounts` ne s'applique qu'aux NIC de VM ; Cloud Run en Direct VPC Egress ne supporte que les tags réseau. |
@@ -232,8 +232,7 @@ alb-internal/
 │       │   ├── AlbInternalApplication.java
 │       │   ├── Item.java
 │       │   ├── ItemRepository.java
-│       │   ├── ItemController.java
-│       │   └── FlywayMigrationRunner.java  # migration explicite : Spring Boot 4.0 n'a plus d'auto-config Flyway
+│       │   └── ItemController.java
 │       └── resources/
 │           ├── application.yaml
 │           └── db/migration/V1__create_items.sql
