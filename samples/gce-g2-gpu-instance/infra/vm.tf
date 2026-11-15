@@ -67,12 +67,13 @@ resource "google_compute_instance" "llm_node" {
   }
 
   # SSH keys come from OS Login (IAM) only, never from project metadata.
+  # The startup script lives in metadata (not metadata_startup_script, which
+  # forces a new VM on every change): an edit applies in place, at next boot.
   metadata = {
     enable-oslogin         = "TRUE"
     block-project-ssh-keys = "TRUE"
+    startup-script         = file("${path.module}/startup.sh")
   }
-
-  metadata_startup_script = file("${path.module}/startup.sh")
 
   resource_policies = [google_compute_resource_policy.llm_schedule.self_link]
 }

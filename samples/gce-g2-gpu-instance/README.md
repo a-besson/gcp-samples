@@ -10,6 +10,7 @@ L'infrastructure est conçue selon les principes de **Privilège Minimum** et de
 - **Accès Sécurisé (IAP)** : Les connexions (SSH et API Ollama) s'effectuent exclusivement via un tunnel **Identity-Aware Proxy (IAP)**. Cela élimine le besoin de firewall ouvert sur le monde et d'IP publique.
 - **Identité & IAM** : L'instance utilise un Service Account dédié (`llm-instance-sa`) avec des rôles granulaires pour le logging, le monitoring et l'accès au tunnel.
 - **Chiffrement** : Les flux sont chiffrés de bout en bout (Tunnel TLS via IAP).
+- **Chaîne d'approvisionnement** : `infra/startup.sh` épingle `cuda_installer` (v1.5.0) et le script d'installation d'Ollama (tag `v0.40.15`, binaires `OLLAMA_VERSION=0.40.15`), vérifie leur SHA-256 avant de les exécuter en root, et n'installe qu'une fois (le script tourne à chaque démarrage planifié). Limite : l'archive Ollama téléchargée par ce script n'est pas vérifiée par checksum ; une image personnalisée (Packer) reste l'option la plus sûre.
 
 ### Schéma des Flux (Authentification & Chiffrement)
 
