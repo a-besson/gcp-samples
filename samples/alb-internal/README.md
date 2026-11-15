@@ -227,15 +227,18 @@ alb-internal/
 ├── app/
 │   ├── Containerfile              # multi-stage, runtime = Docker Hardened Image
 │   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/example/albinternal/
-│       │   ├── AlbInternalApplication.java
-│       │   ├── Item.java
-│       │   ├── ItemRepository.java
-│       │   └── ItemController.java
-│       └── resources/
-│           ├── application.yaml
-│           └── db/migration/V1__create_items.sql
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/example/albinternal/
+│       │   │   ├── AlbInternalApplication.java
+│       │   │   ├── Item.java
+│       │   │   ├── ItemRepository.java
+│       │   │   └── ItemController.java
+│       │   └── resources/
+│       │       ├── application.yaml
+│       │       └── db/migration/V1__create_items.sql
+│       └── test/java/com/example/albinternal/
+│           └── ItemApiIntegrationTest.java  # API + migrations Flyway sur H2 (mode PostgreSQL), hors-ligne
 └── infra/
     ├── TFDOCS.md                  # généré par pre-commit depuis infra/bootstrap
     ├── bootstrap/                 # stack create-once : KMS + Artifact Registry
