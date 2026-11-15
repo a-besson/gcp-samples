@@ -21,22 +21,24 @@ module "gke" {
   enable_private_endpoint = false
   master_ipv4_cidr_block  = "172.16.0.0/28"
 
-  # Master authorized networks - restrict control plane access
-  # Only nodes subnet and IAP range are allowed
+  # Master authorized networks - restrict control plane access to the nodes
+  # subnet (operators reach it from a base test VM, `--internal-ip`) and to
+  # the networks declared in var.master_authorized_networks. The IAP TCP
+  # forwarding range is not listed: it is shared by every Google Cloud
+  # customer and IAP never forwards traffic to a GKE control plane.
   master_authorized_networks = concat(
     [
       {
         cidr_block   = data.terraform_remote_state.base.outputs.subnet_priv_a.ip_cidr_range
         display_name = "subnet-priv-a"
-      },
-      {
-        cidr_block   = "35.235.240.0/20"
-        display_name = "IAP-tunnel"
       }
     ],
     var.master_authorized_networks
   )
   master_global_access_enabled = true
+
+  # DNS-based control-plane endpoint kept internal (explicit, the API default).
+  dns_allow_external_traffic = false
 
   # Release channel and version
   release_channel    = "REGULAR"
