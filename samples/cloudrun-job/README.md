@@ -88,7 +88,7 @@ Toutes les commandes se lancent depuis `samples/cloudrun-job/` (`task --list` po
 
 | Commande | Description |
 |---|---|
-| `task setup` | Crée le bucket de state GCS et le dépôt Artifact Registry (idempotent) |
+| `task setup` | Crée le bucket de state GCS (idempotent ; le dépôt Artifact Registry vient de `base`) |
 | `task build` | Build l'image Docker (Podman) et la pousse vers Artifact Registry |
 | `task init` | Initialise Terraform avec le backend GCS |
 | `task plan` | Calcule le plan Terraform |

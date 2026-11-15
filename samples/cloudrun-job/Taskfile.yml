@@ -24,11 +24,10 @@ tasks:
       - task --list
 
   setup:
-    desc: "Create GCS state bucket and Artifact Registry (idempotent)"
+    desc: "Create the GCS state bucket (idempotent; the Artifact Registry repository comes from samples/base)"
     cmds:
       - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
       - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
-      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Simple Job Repo" --project={{.PROJECT_ID}} || true
 
   build:
     desc: "Build and push the Docker image to Artifact Registry"

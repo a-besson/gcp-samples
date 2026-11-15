@@ -23,7 +23,7 @@ graph LR
 ## 🚀 Getting Started
 
 ### 1. Préparation du projet
-Assurez-vous d'avoir configuré votre fichier `.env` à la racine et initialisez les ressources de base (Bucket GCS, Artifact Registry) :
+Assurez-vous d'avoir configuré votre fichier `.env` à la racine, appliqué `samples/base` (qui crée le dépôt Artifact Registry `cloudrun-bastion<suffix>`) et initialisez le bucket de state GCS :
 ```bash
 cp ../../.env.example ../../.env
 # Renseigner PROJECT_ID, REGION (europe-west9 recommandé), etc.
@@ -138,7 +138,7 @@ PGPASSWORD=$DB_PASS psql "host=127.0.0.1 port=5432 user=testuser dbname=testdb s
 
 | Command | Description |
 |---|---|
-| `task setup` | Prépare le Bucket TF State et le repo Artifact Registry |
+| `task setup` | Prépare le Bucket TF State (le dépôt Artifact Registry vient de `base`) |
 | `task build` | Build l'image Docker (Podman linux/amd64) et push sur Artifact Registry |
 | `task init` | Initialise Terraform avec le backend GCS |
 | `task plan` | Affiche le plan d'exécution Terraform |

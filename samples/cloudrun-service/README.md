@@ -20,7 +20,7 @@ Ensure you have the `base` infrastructure applied and the project IDs configured
 Use the provided `Taskfile` to automate the lifecycle:
 
 ```bash
-# 1. Setup GCS state bucket and Artifact Registry
+# 1. Setup the GCS state bucket (the Artifact Registry repository comes from samples/base)
 task setup
 
 # 2. Build and Push the Docker Image (plan/apply resolve the pushed tag to its digest,
