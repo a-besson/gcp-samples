@@ -123,17 +123,12 @@ run "validate_compute_test_vms" {
   }
 
   assert {
-    condition     = google_compute_instance.test_vm_public.name == "vm-test-public${var.name_suffix}"
-    error_message = "Test VM Public name is incorrect"
+    condition     = google_compute_instance.test_vm_a.effective_labels.env == "dev"
+    error_message = "Test VM A does not have the 'env=dev' label"
   }
 
   assert {
-    condition     = google_compute_instance.test_vm_public.effective_labels.env == "dev"
-    error_message = "Test VM Public does not have the 'env=dev' label"
-  }
-
-  assert {
-    condition     = contains(google_compute_instance.test_vm_public.tags, "dev")
-    error_message = "Test VM Public does not have the 'dev' tag"
+    condition     = contains(google_compute_instance.test_vm_a.tags, "dev")
+    error_message = "Test VM A does not have the 'dev' tag"
   }
 }
