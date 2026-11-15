@@ -94,7 +94,7 @@ Toutes les commandes se lancent depuis `samples/cloudrun-job/` (`task --list` po
 | `task plan` | Calcule le plan Terraform |
 | `task apply` | Applique l'infrastructure (construit et pousse l'image avant) |
 | `task destroy` | Détruit l'infrastructure |
-| `task test` | Lance les tests Terraform |
+| `task test` | Lance les tests Terraform hors-ligne (`mock_provider`, aucun credential GCP) |
 | `task e2e` | Test E2E sur l'infra déjà déployée : déclenche une exécution réelle du job, attend `Completed` |
 | `task cyber-scan` | Scans de sécurité : KICS sur `infra/`, Trivy sur l'image construite |
 | `task review` | Lance `pre-commit` sur tout le dépôt |

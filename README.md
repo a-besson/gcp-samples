@@ -85,10 +85,10 @@ task --list               # root commands
 |---|---|
 | `task init` | Installs the system dependencies (Homebrew) |
 | `task apply-all` / `task destroy-all` | Deploys / destroys `base` first, then the samples in parallel (**billable**: check the FinOps notes of each sample first) |
-| `task test-all` | Terraform tests of every sample. **Online and billable**: needs GCP credentials and a deployed `base`, and the `base` and `cloudrun-service` tests `apply` real resources (only `alb-internal` is offline, with mock providers) |
+| `task test-all` | Terraform tests of every sample, **offline** (`mock_provider`: no GCP credentials, nothing is created; the CI runs the same tests). Checks against deployed resources live in each sample's `task e2e` |
 | `task review` | `pre-commit run --all-files` |
 
-`gce-g2-gpu-instance` (GPU) is deliberately outside `apply-all`/`destroy-all`/`test-all`: deploy it on its own from its folder. Each sample also has its own `Taskfile.yml` (`cd samples/<name> && task --list`). Deploy [`base`](samples/base/) first: the other samples read its VPC.
+`gce-g2-gpu-instance` (GPU) is deliberately outside `apply-all`/`destroy-all` (its offline tests are part of `test-all`): deploy it on its own from its folder. Each sample also has its own `Taskfile.yml` (`cd samples/<name> && task --list`). Deploy [`base`](samples/base/) first: the other samples read its VPC.
 
 ---
 
@@ -140,7 +140,7 @@ GitHub Actions workflows live in `.github/workflows/` and run **on pull requests
 
 | Workflow | Role |
 |---|---|
-| `build-<sample>.yml` (x7: `base`, `alb-internal`, `cloudrun-bastion`, `cloudrun-job`, `cloudrun-service`, `gce-g2-gpu-instance`, `gke-base-sample`) | One per sample, filtered on `samples/<sample>/**`: `terraform fmt` → `init -backend=false` + `validate` (every root) → `tflint` → `terraform test` (offline mock providers, `alb-internal` only) and, for `alb-internal`, `mvn compile/test/package/verify` |
+| `build-<sample>.yml` (x7: `base`, `alb-internal`, `cloudrun-bastion`, `cloudrun-job`, `cloudrun-service`, `gce-g2-gpu-instance`, `gke-base-sample`) | One per sample, filtered on `samples/<sample>/**`: `terraform fmt` → `init -backend=false` + `validate` (every root) → `tflint` → `terraform test` (offline, mock providers) and, for `alb-internal`, `mvn compile/test/package/verify` |
 | `_build-sample.yml` | Reusable workflow called by every `build-*` |
 | `check-quality.yml` | Repo-wide `pre-commit run --all-files` (gitleaks, fmt, validate, tflint, generated `TFDOCS.md`) |
 | `check-cyber.yml` | Repo-wide KICS, Trivy `config` + `fs` (vuln, secret) and a Trivy image scan per Dockerfile/Containerfile |

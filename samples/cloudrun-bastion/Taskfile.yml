@@ -82,11 +82,11 @@ tasks:
       - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
   test:
-    desc: "Run Terraform tests"
+    desc: "Run the Terraform tests offline (mock_provider, no GCP credentials needed)"
     dir: infra
-    deps: [init]
     cmds:
-      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+      - terraform init -backend=false -input=false
+      - terraform test
 
   review:
     desc: "Run pre-commit hooks on all files"

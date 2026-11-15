@@ -1,11 +1,29 @@
-# Variables are now loaded from ../../.env via Task
-# We add a unique suffix for testing to avoid naming conflicts (Error 409)
+# 100% offline unit tests: mock_provider replaces every google/google-beta
+# API call, so this file runs in CI with zero GCP credentials
+# (`task test` = `terraform init -backend=false` + `terraform test`).
+# Checks that need the real API (assigned gateway address, effective labels)
+# live in `task e2e`, against the deployed stack.
+
+# Mocked apply runs (still offline) make computed attributes known. Only
+# values the provider validates get realistic defaults.
+mock_provider "google" {
+  mock_resource "google_service_account" {
+    defaults = {
+      name  = "projects/test-project/serviceAccounts/mock-sa@test-project.iam.gserviceaccount.com"
+      email = "mock-sa@test-project.iam.gserviceaccount.com"
+    }
+  }
+}
+mock_provider "google-beta" {}
+
 variables {
-  name_suffix = "-test-${formatdate("hhmmss", timestamp())}"
+  project_id  = "test-project"
+  region      = "europe-west9"
+  name_suffix = "-test"
 }
 
 run "validate_vpc" {
-  command = plan
+  command = apply
 
   assert {
     condition     = module.vpc.network_name == "gcp-sample-base-vpc${var.name_suffix}"
@@ -19,7 +37,7 @@ run "validate_vpc" {
 }
 
 run "validate_subnets" {
-  command = plan
+  command = apply
 
   assert {
     condition     = module.vpc.subnets["europe-west9/subnet-public${var.name_suffix}"].ip_cidr_range == "10.0.0.0/22"
@@ -53,7 +71,7 @@ run "validate_subnets" {
 }
 
 run "validate_services" {
-  command = plan
+  command = apply
 
   assert {
     condition     = google_project_service.container_scanning.service == "containerscanning.googleapis.com"
@@ -76,20 +94,13 @@ run "validate_services" {
   }
 }
 
-run "validate_apply" {
+run "validate_network_infrastructure" {
   command = apply
 
+  # Offline, the router keeps the configured network (the API stores its
+  # self link): compare with the VPC name the module created.
   assert {
-    condition     = module.vpc.subnets["europe-west9/subnet-public${var.name_suffix}"].gateway_address == "10.0.0.1"
-    error_message = "End-to-end validation failed: Public subnet gateway address '10.0.0.1' was not correctly assigned by GCP"
-  }
-}
-
-run "validate_network_infrastructure" {
-  command = plan
-
-  assert {
-    condition     = google_compute_router.router.network == module.vpc.network_self_link
+    condition     = google_compute_router.router.network == module.vpc.network_name
     error_message = "Cloud Router is not attached to the correct VPC"
   }
 
@@ -100,7 +111,7 @@ run "validate_network_infrastructure" {
 }
 
 run "validate_compute_test_vms" {
-  command = plan
+  command = apply
 
   assert {
     condition     = google_service_account.test_vm_sa.account_id == "test-vm-sa${var.name_suffix}"
@@ -120,11 +131,6 @@ run "validate_compute_test_vms" {
   assert {
     condition     = google_compute_instance.test_vm_a.metadata.enable-oslogin == "TRUE"
     error_message = "OS Login should be enabled on Test VM A"
-  }
-
-  assert {
-    condition     = google_compute_instance.test_vm_a.effective_labels.env == "dev"
-    error_message = "Test VM A does not have the 'env=dev' label"
   }
 
   assert {

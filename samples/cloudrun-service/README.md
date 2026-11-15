@@ -6,7 +6,7 @@ This sample demonstrates a production-grade Cloud Run service configured to list
 - **VPC Integration**: Direct VPC Egress to the base VPC via remote state.
 - **Port 443**: The container is configured to listen on port 443 (handling HTTP traffic from the GFE).
 - **Security by Design**: Access is restricted to IAM-authenticated callers only.
-- **E2E Testing**: Automated Terraform tests that deploy, authenticate, and verify the service.
+- **Testing**: offline Terraform tests (mock providers) and a `task e2e` smoke test that authenticates against the deployed service.
 
 ---
 
@@ -52,21 +52,15 @@ curl -i -v -H "Authorization: Bearer $(gcloud auth print-identity-token)" "http:
 
 ## 🧪 Automated Testing
 
-We use `terraform test` to ensure the service is correctly deployed and reachable from the outside with valid credentials.
+`task test` runs `terraform test` **offline** (`mock_provider`, no GCP credentials, nothing is created): ingress settings, IAM-only invocation and naming.
 
 ```bash
 task test
 ```
 
-The test logic:
-1. Performs a `terraform apply`.
-2. Impersonates a test Service Account.
-3. Performs an `http` call to the URL.
-4. Asserts that the response status is `200 OK`.
-
 ### 🔍 `task e2e` — Smoke Test on Already-Deployed Infrastructure
 
-Unlike `task test` (which applies its own throwaway infra), `task e2e` assumes `task apply` has already run and exercises the real, already-deployed `exposed-service`:
+Unlike `task test` (offline, mock providers), `task e2e` assumes `task apply` has already run and exercises the real, already-deployed `exposed-service`:
 
 ```bash
 task e2e
@@ -83,5 +77,5 @@ Runs under the operator's own identity, not the Taskfile's ambient `sa-iac` impe
 ## 📁 Project Structure
 - `app/`: Python/Flask application listening on port 443.
 - `infra/`: Terraform modules for GCP resources.
-- `infra/tests/`: E2E terraform tests.
+- `infra/tests/`: offline Terraform tests (mock providers).
 - `Taskfile.yml`: Orchestration commands.

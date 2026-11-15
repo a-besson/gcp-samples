@@ -78,7 +78,7 @@ tasks:
     parallel: true
 
   test-all:
-    desc: "Exécute tous les tests Terraform du projet en parallèle (en ligne et facturé : base et cloudrun-service créent de vraies ressources ; seul alb-internal est hors-ligne)."
+    desc: "Exécute tous les tests Terraform du projet en parallèle, hors-ligne (mock_provider : aucun credential GCP, aucune ressource créée)."
     cmds:
       - task: terraform-cmd
         vars: { DIR: "samples/base", CMD: "test" }
@@ -92,6 +92,8 @@ tasks:
         vars: { DIR: "samples/cloudrun-service", CMD: "test" }
       - task: terraform-cmd
         vars: { DIR: "samples/gke-base-sample", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/gce-g2-gpu-instance", CMD: "test" }
     parallel: true
 
   terraform-cmd:

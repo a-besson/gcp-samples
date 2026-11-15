@@ -84,11 +84,14 @@ task init
 # 2. Review planned changes
 task plan
 
-# 3. Run the Terraform tests (online: the validate_apply run creates and destroys real resources)
+# 3. Run the Terraform tests (offline: mock providers, no credentials)
 task test
 
 # 4. Apply the configuration
 task apply
+
+# 5. Check the deployed stack against the real API (gateway address, labels)
+task e2e
 ```
 
 ---
@@ -98,11 +101,11 @@ task apply
 VMs have no public IP. SSH is provided exclusively via **Identity-Aware Proxy**:
 
 ```bash
-# Connect to vm-test-a (private subnet A)
-gcloud compute ssh vm-test-a --zone europe-west9-a --tunnel-through-iap
+# Connect to vm-test-a (private subnet A; names carry name_suffix, "-sample" by default)
+gcloud compute ssh vm-test-a-sample --zone europe-west9-a --tunnel-through-iap
 
 # Connect to vm-test-b (private subnet B)
-gcloud compute ssh vm-test-b --zone europe-west9-b --tunnel-through-iap
+gcloud compute ssh vm-test-b-sample --zone europe-west9-b --tunnel-through-iap
 
 ```
 
@@ -119,6 +122,7 @@ gcloud compute ssh vm-test-b --zone europe-west9-b --tunnel-through-iap
 | `task init` | Initialize Terraform providers and backend |
 | `task plan` | Preview infrastructure changes |
 | `task apply` | Apply the configuration |
-| `task test` | Run `terraform test` (online, needs GCP credentials; `validate_apply` provisions billable resources) |
+| `task test` | Run `terraform test` offline (`mock_provider`, no GCP credentials) |
+| `task e2e` | Check the deployed stack against the real API (public subnet gateway, `env=dev` label) |
 | `task review` | Run pre-commit hooks (Gitleaks, fmt, docs, validate) |
 | `task destroy` | Destroy all infrastructure |

@@ -144,8 +144,11 @@ kubectl get nodes
 ## 🧪 Tests
 
 ```bash
-# Tests Terraform (plan-level validation)
+# Tests Terraform hors-ligne (mock_provider, aucun credential GCP)
 task test
+
+# Contrôle du cluster déployé (API réelle : nom attendu, statut RUNNING)
+task e2e
 ```
 
 ---
@@ -158,6 +161,8 @@ task test
 | `task apply` | Déployer le cluster GKE |
 | `task get-credentials` | Configurer kubectl |
 | `task deploy-nginx` | Déployer nginx interne |
+| `task test` | Tests Terraform hors-ligne (`mock_provider`) |
+| `task e2e` | Vérifier le cluster déployé (nom, statut `RUNNING`) |
 | `task test-nginx` | Tester la connectivité nginx |
 | `task port-forward` | Tunnel local sécurisé vers nginx |
 | `task undeploy-nginx` | Supprimer nginx du cluster |

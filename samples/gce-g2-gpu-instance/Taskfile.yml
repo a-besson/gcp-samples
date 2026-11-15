@@ -68,6 +68,13 @@ tasks:
     cmds:
       - terraform destroy --auto-approve -var="project_id=${PROJECT_ID}" -var="region={{.GPU_REGION}}" -var="zone={{.GPU_ZONE}}"
 
+  test:
+    desc: Run the Terraform tests offline (mock_provider, no GCP credentials needed)
+    dir: infra
+    cmds:
+      - terraform init -backend=false -input=false
+      - terraform test
+
   ssh:
     desc: "Connect to the instance via IAP SSH"
     cmds:

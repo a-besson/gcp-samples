@@ -143,7 +143,7 @@ PGPASSWORD=$DB_PASS psql "host=127.0.0.1 port=5432 user=testuser dbname=testdb s
 | `task init` | Initialise Terraform avec le backend GCS |
 | `task plan` | Affiche le plan d'exécution Terraform |
 | `task apply` | Déploie l'intégralité de l'infrastructure |
-| `task test` | Exécute les tests unitaires Terraform |
+| `task test` | Exécute les tests unitaires Terraform hors-ligne (`mock_provider`, aucun credential GCP) |
 | `task bastion-run` | Lance le container en local pour debug |
 | `task test-local` | Teste le proxy local via curl |
 | `task db-proxy` | Ouvre un tunnel SSH IAP (`localhost:5432`) vers l'IP privée de l'instance Cloud SQL, via la VM de test de `base` |

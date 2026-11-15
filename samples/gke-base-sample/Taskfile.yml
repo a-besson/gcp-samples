@@ -50,10 +50,10 @@ tasks:
       - terraform apply --auto-approve
 
   test:
-    desc: "Run Terraform tests"
+    desc: "Run the Terraform tests offline (mock_provider, no GCP credentials needed)"
     dir: infra
-    deps: [init]
     cmds:
+      - terraform init -backend=false -input=false
       - terraform test
 
   destroy:
@@ -67,6 +67,15 @@ tasks:
     desc: "Run KICS security scan on the Terraform IaC"
     cmds:
       - kics scan -p infra --exclude-paths "**/.terraform/**"
+
+  e2e:
+    desc: "Check the deployed cluster against the real API: it exists under its expected name and is RUNNING"
+    cmds:
+      - |
+        set -e
+        STATUS=$(gcloud container clusters describe {{.CLUSTER_NAME}} --region {{.REGION}} --project {{.PROJECT_ID}} --format='value(status)')
+        echo "{{.CLUSTER_NAME}}: $STATUS (expected RUNNING)"
+        test "$STATUS" = "RUNNING"
 
   get-credentials:
     desc: "Configure kubectl to connect to the GKE cluster"

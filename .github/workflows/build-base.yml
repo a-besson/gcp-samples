@@ -20,3 +20,4 @@ jobs:
     uses: ./.github/workflows/_build-sample.yml
     with:
       sample: base
+      terraform-test: true

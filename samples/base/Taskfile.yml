@@ -6,6 +6,7 @@ dotenv:
 
 vars:
   ENVIRONMENT: base
+  NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
 
 tasks:
   default:
@@ -44,11 +45,23 @@ tasks:
       - terraform plan -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
 
   test:
-    desc: Run Terraform tests
+    desc: Run the Terraform tests offline (mock_provider, no GCP credentials needed)
     dir: infra
-    deps: [init]
     cmds:
-      - terraform test -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+      - terraform init -backend=false -input=false
+      - terraform test
+
+  e2e:
+    desc: "Check the deployed stack against the real API: public subnet gateway 10.0.0.1, env=dev label on test VM A"
+    cmds:
+      - |
+        set -e
+        GW=$(gcloud compute networks subnets describe subnet-public{{.NAME_SUFFIX}} --region="${REGION}" --project="${PROJECT_ID}" --format='value(gatewayAddress)')
+        echo "subnet-public{{.NAME_SUFFIX}} gateway: $GW (expected 10.0.0.1)"
+        test "$GW" = "10.0.0.1"
+        ENV_LABEL=$(gcloud compute instances describe vm-test-a{{.NAME_SUFFIX}} --zone="${REGION}-a" --project="${PROJECT_ID}" --format='value(labels.env)')
+        echo "vm-test-a{{.NAME_SUFFIX}} env label: $ENV_LABEL (expected dev)"
+        test "$ENV_LABEL" = "dev"
 
   apply:
     desc: Apply Terraform changes

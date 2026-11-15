@@ -44,7 +44,7 @@ pre-commit run --all-files
 task init                # Install system dependencies (Homebrew)
 task apply-all           # base first, then the samples in parallel (expensive: ask first)
 task destroy-all         # samples first, then base
-task test-all            # Terraform tests of every sample
+task test-all            # Offline Terraform tests of every sample (mock providers, no credentials)
 task review              # pre-commit run --all-files
 
 # Per sample (cd samples/<name>): task init | plan | apply | destroy | test | e2e | cyber-scan

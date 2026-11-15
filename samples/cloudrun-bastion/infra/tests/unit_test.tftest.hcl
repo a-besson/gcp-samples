@@ -1,3 +1,24 @@
+# 100% offline unit tests: mock_provider replaces every google/google-beta
+# API call, so this file runs in CI with zero GCP credentials
+# (`task test` = `terraform init -backend=false` + `terraform test`).
+
+mock_provider "google" {}
+mock_provider "google-beta" {}
+
+# Outputs read from the base stack (GCS remote state) in a real plan.
+override_data {
+  target = data.terraform_remote_state.base
+  values = {
+    outputs = {
+      network_name      = "gcp-sample-base-vpc-test"
+      network_self_link = "projects/test-project/global/networks/gcp-sample-base-vpc-test"
+      bastion_repo_name = "cloudrun-bastion-test"
+      subnet_public     = { id = "projects/test-project/regions/europe-west1/subnetworks/subnet-public-test", name = "subnet-public-test", ip_cidr_range = "10.0.0.0/22" }
+      subnet_priv_a     = { id = "projects/test-project/regions/europe-west1/subnetworks/subnet-priv-a-test", name = "subnet-priv-a-test", ip_cidr_range = "10.0.4.0/22" }
+    }
+  }
+}
+
 variables {
   project_id     = "test-project"
   region         = "europe-west1"

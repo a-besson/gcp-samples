@@ -65,6 +65,7 @@ Le déploiement échouera si vous n'avez pas les quotas GPU nécessaires.
 ### 2. Initialisation & Livraison
 ```bash
 task setup   # Crée le bucket GCS pour le remote state
+task test    # Tests Terraform hors-ligne (mock_provider, aucun credential)
 task apply   # Déploie l'infrastructure
 ```
 
