@@ -13,6 +13,7 @@ vars:
     - gitleaks
     - libpq
     - kubectl
+    - kics # called by every sample `task cyber-scan`
   # tflint is distributed as a Homebrew cask (terraform-linters/tap), not a
   # formula: `brew install tflint` fails ("No available formula"), and the
   # older `terraform-linters/tflint` tap has been retired (404 on GitHub).

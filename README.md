@@ -20,7 +20,7 @@ Install the required tools before running any sample:
 **macOS (Homebrew)**
 
 ```bash
-brew install terraform go-task/tap/go-task trivy pre-commit terraform-docs gitleaks libpq
+brew install terraform go-task/tap/go-task trivy pre-commit terraform-docs gitleaks libpq kics
 # tflint is a Homebrew cask (terraform-linters/tap), not a formula
 brew install --cask google-cloud-sdk terraform-linters/tap/tflint
 # On macOS, link libpq to get psql
