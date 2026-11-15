@@ -66,15 +66,9 @@ gke-base-sample/
 │   ├── variables.tf       # Variables d'entrée
 │   ├── network.tf         # Référence réseau via remote state
 │   ├── gke.tf             # Cluster GKE Autopilot (module officiel)
-│   ├── iam.tf             # IAM et service accounts
 │   ├── outputs.tf         # Outputs + script kubectl
 │   └── tests/
 │       └── unit.tftest.hcl  # Tests Terraform
-└── application/           # Application Java Spring Boot (Clean Architecture)
-    ├── pom.xml
-    ├── Dockerfile
-    ├── Taskfile.yml
-    └── ...                # Code source multi-module (voir application/README.md)
 ```
 
 ---
@@ -132,8 +126,9 @@ Le control plane GKE est protégé par **Master Authorized Networks**. Deux mét
 # Depuis une VM du subnet privé via IAP
 gcloud compute ssh vm-test-a --zone europe-west9-a --tunnel-through-iap
 
-# Puis sur la VM :
-gcloud container clusters get-credentials gke-autopilot-sample --region europe-west9
+# Puis sur la VM : --internal-ip cible l'endpoint privé du control plane
+# (subnet-priv-a y est autorisé ; l'endpoint public verrait l'IP du Cloud NAT)
+gcloud container clusters get-credentials gke-autopilot-sample --region europe-west9 --internal-ip
 kubectl get nodes
 ```
 

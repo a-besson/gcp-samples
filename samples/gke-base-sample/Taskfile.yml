@@ -93,7 +93,7 @@ tasks:
       - |
         echo "🔍 Testing nginx from within the cluster..."
         kubectl run curl-test --rm -it --restart=Never \
-          --image=curlimages/curl \
+          --image=curlimages/curl:8.23.0@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93 \
           -n nginx-internal \
           -- curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
           http://nginx-internal.nginx-internal.svc.cluster.local
@@ -111,30 +111,3 @@ tasks:
     desc: "Remove the nginx deployment from the cluster"
     cmds:
       - kubectl delete -f k8s/ --ignore-not-found
-
-  # ── Application Build ───────────────────────────────────
-
-  app-build:
-    desc: "Build the Java application (compile + unit tests)"
-    cmds:
-      - task --dir application build
-
-  app-test:
-    desc: "Run application unit tests"
-    cmds:
-      - task --dir application test
-
-  app-integration-test:
-    desc: "Run application integration tests (PostgreSQL/Podman)"
-    cmds:
-      - task --dir application integration-test
-
-  app-docker-build:
-    desc: "Build the application container image"
-    cmds:
-      - task --dir application docker-build
-
-  app-ci:
-    desc: "Full application CI pipeline (build + docker)"
-    cmds:
-      - task --dir application ci

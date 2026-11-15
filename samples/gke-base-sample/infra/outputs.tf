@@ -53,7 +53,7 @@ output "kubectl_connect" {
     echo "   kubectl get svc -n nginx-internal"
     echo ""
     echo "🌐 To test nginx from within the cluster:"
-    echo "   kubectl run curl-test --rm -it --restart=Never --image=curlimages/curl -n nginx-internal -- curl -s http://nginx-internal.nginx-internal.svc.cluster.local"
+    echo "   kubectl run curl-test --rm -it --restart=Never --image=curlimages/curl:8.23.0@sha256:3fb7e13e5d179a845c97d78204f3f1064d1907037f26a3ebf91710571151fd93 -n nginx-internal -- curl -s http://nginx-internal.nginx-internal.svc.cluster.local"
     echo ""
     echo "🔒 To access nginx via port-forward (secure local access):"
     echo "   kubectl port-forward -n nginx-internal svc/nginx-internal 8080:80"
