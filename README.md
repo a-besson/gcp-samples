@@ -151,6 +151,8 @@ Adding a sample means adding a `build-<sample>.yml` caller (copy an existing one
 
 [Renovate](https://docs.renovatebot.com/) (`renovate.json`) keeps GitHub Actions, Docker base images, Terraform providers/modules, pip and Maven dependencies, and `pre-commit` hook revisions up to date. Actions and images are pinned by digest, updates wait 7 days after release (`minimumReleaseAge`) and at most 5 PRs stay open. Minor/patch/digest updates are squash-automerged once the CI is green; major updates need approval from the Dependency Dashboard. The Renovate GitHub App must be installed on the repository.
 
+Each Terraform root commits its `.terraform.lock.hcl`, with provider hashes for `linux_amd64`, `darwin_arm64` and `darwin_amd64`; CI and the `terraform_validate` hook run `terraform init -lockfile=readonly`, so a provider changes only through a reviewed lock-file diff.
+
 ---
 
 ## 📜 License

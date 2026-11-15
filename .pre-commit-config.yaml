@@ -35,6 +35,8 @@ repos:
       - id: terraform_validate
         args:
           - --args=-no-color
+          # Committed lock files: never let the hook rewrite them
+          - --tf-init-args=-lockfile=readonly
       - id: terraform_docs
         args:
           - --hook-config=--path-to-file=../TFDOCS.md

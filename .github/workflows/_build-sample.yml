@@ -52,12 +52,13 @@ jobs:
       - name: Lint - terraform fmt
         run: terraform fmt -check -recursive
       # A sample can hold several Terraform roots (e.g. infra/ and infra/bootstrap/):
-      # initialise and validate every root found, without a real backend.
+      # initialise and validate every root found, without a real backend. The
+      # committed .terraform.lock.hcl must already match the configuration.
       - name: Syntax - terraform init and validate (no backend)
         run: |
           while IFS= read -r root; do
             echo "::group::terraform validate ($root)"
-            terraform -chdir="$root" init -backend=false -input=false
+            terraform -chdir="$root" init -backend=false -input=false -lockfile=readonly
             terraform -chdir="$root" validate
             echo "::endgroup::"
           done < <(find . -name '*.tf' -not -path '*/.terraform/*' -exec dirname {} \; | sort -u)
