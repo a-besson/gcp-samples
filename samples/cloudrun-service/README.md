@@ -6,6 +6,7 @@ This sample demonstrates a production-grade Cloud Run service configured to list
 - **VPC Integration**: Direct VPC Egress to the base VPC via remote state.
 - **Port 443**: The container is configured to listen on port 443 (handling HTTP traffic from the GFE).
 - **Security by Design**: Access is restricted to IAM-authenticated callers only.
+- **HTTPS-only Load Balancer**: the global LB serves only HTTPS (no port 80), with a Google-managed certificate on a Cloud Endpoints `.cloud.goog` domain, so identity tokens never travel in clear text.
 - **Testing**: offline Terraform tests (mock providers) and a `task e2e` smoke test that authenticates against the deployed service.
 
 ---
@@ -41,10 +42,10 @@ curl -i -v -H "Authorization: Bearer $(gcloud auth print-identity-token)" $EXPOS
 INTERNAL_SERVICE_URL=$(cd infra && terraform output -raw internal_service_url)
 curl -i -v -H "Authorization: Bearer $(gcloud auth print-identity-token)" $INTERNAL_SERVICE_URL
 
-# Test via the Global Load Balancer
-LOAD_BALANCER_IP=$(cd infra && terraform output -raw load_balancer_ip)
-# Note: It may take 5-10 minutes for the Load Balancer to become fully operational.
-curl -i -v -H "Authorization: Bearer $(gcloud auth print-identity-token)" "http://$LOAD_BALANCER_IP"
+# Test via the Global Load Balancer (HTTPS, Cloud Endpoints domain)
+LOAD_BALANCER_URL=$(cd infra && terraform output -raw load_balancer_url)
+# Note: the Google-managed certificate can take up to 60 minutes to become active after a first apply.
+curl -i -v -H "Authorization: Bearer $(gcloud auth print-identity-token)" "$LOAD_BALANCER_URL"
 ```
 
 
@@ -68,7 +69,7 @@ task e2e
 
 1. Unauthenticated request → expects `403`.
 2. Request with an identity token impersonating `test_sa`, direct to Cloud Run → expects `200`.
-3. Same token, via the Load Balancer IP → expects `200` (allow 5–10 min after a first `apply` for the LB to be fully operational).
+3. Same token, via the HTTPS Load Balancer URL → expects `200` (the managed certificate can take up to 60 min after a first `apply`).
 
 Runs under the operator's own identity, not the Taskfile's ambient `sa-iac` impersonation: it's the operator who is granted `roles/iam.serviceAccountTokenCreator` on `test_sa` (`infra/iam.tf`), needed to mint that identity token.
 

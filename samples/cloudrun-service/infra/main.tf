@@ -9,6 +9,7 @@ module "project_services" {
     "run.googleapis.com",
     "compute.googleapis.com",
     "artifactregistry.googleapis.com",
-    "iam.googleapis.com"
+    "iam.googleapis.com",
+    "servicemanagement.googleapis.com",
   ]
 }

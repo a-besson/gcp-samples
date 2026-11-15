@@ -1,4 +1,4 @@
-# --- Global HTTP Load Balancer ---
+# --- Global HTTPS Load Balancer ---
 # Exposes the Cloud Run service via a Serverless Network Endpoint Group (NEG)
 # Reference: https://github.com/terraform-google-modules/terraform-google-lb-http/tree/main/modules/serverless_negs
 
@@ -9,8 +9,13 @@ module "lb_http" {
   name    = "exposed-service-lb${var.name_suffix}"
   project = var.project_id
 
-  ssl            = false
-  https_redirect = false
+  # HTTPS only, with a Google-managed certificate on the Cloud Endpoints
+  # domain (dns.tf): callers send identity tokens, which must never travel
+  # over plain HTTP. No port 80 listener at all (no redirect either).
+  ssl                             = true
+  managed_ssl_certificate_domains = [local.domain]
+  https_redirect                  = false
+  http_forward                    = false
 
   backends = {
     default = {

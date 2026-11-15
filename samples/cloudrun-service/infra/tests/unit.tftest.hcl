@@ -54,6 +54,22 @@ run "validate_authenticated_only" {
   }
 }
 
+# The managed certificate lives inside module.lb_http (not addressable from a
+# test): check the Cloud Endpoints domain it is issued for instead.
+run "validate_https_load_balancer" {
+  command = plan
+
+  assert {
+    condition     = google_endpoints_service.lb_dns.service_name == "exposed-service${var.name_suffix}.endpoints.${var.project_id}.cloud.goog"
+    error_message = "The Cloud Endpoints domain (used by the managed certificate) must follow exposed-service<name_suffix>.endpoints.<project>.cloud.goog."
+  }
+
+  assert {
+    condition     = output.load_balancer_url == "https://${google_endpoints_service.lb_dns.service_name}"
+    error_message = "The Load Balancer must be reached over HTTPS on the Cloud Endpoints domain."
+  }
+}
+
 run "validate_names" {
   command = plan
 
