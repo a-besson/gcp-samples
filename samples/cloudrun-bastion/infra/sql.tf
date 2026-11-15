@@ -11,9 +11,11 @@ resource "random_id" "db_name_suffix" {
 }
 
 # --- Cloud SQL Instance ---
+# PostgreSQL 17 (15 reaches community end of life on 2027-11-11): changing
+# database_version on an existing instance runs an in-place major upgrade.
 resource "google_sql_database_instance" "postgres" {
   name             = "bastion-test-pg-${random_id.db_name_suffix.hex}"
-  database_version = "POSTGRES_15"
+  database_version = "POSTGRES_17"
   region           = var.region
   project          = var.project_id
 
@@ -21,8 +23,10 @@ resource "google_sql_database_instance" "postgres" {
   deletion_protection = false
 
   settings {
-    # Low-cost tier suitable for testing
-    tier = "db-f1-micro"
+    # Low-cost tier suitable for testing; ENTERPRISE_PLUS (the API default for
+    # recent versions) rejects shared-core tiers like db-f1-micro.
+    edition = "ENTERPRISE"
+    tier    = "db-f1-micro"
 
     user_labels = {
       role = "bastion-database"

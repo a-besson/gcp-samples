@@ -107,6 +107,11 @@ run "validate_sql_private_ip" {
   command = plan
 
   assert {
+    condition     = google_sql_database_instance.postgres.database_version == "POSTGRES_17" && google_sql_database_instance.postgres.settings[0].edition == "ENTERPRISE"
+    error_message = "The test database must run PostgreSQL 17 on the Enterprise edition (shared-core tier)."
+  }
+
+  assert {
     condition     = google_sql_database_instance.postgres.settings[0].ip_configuration[0].ipv4_enabled == false
     error_message = "SQL database must have no public IP (ipv4_enabled = false)."
   }
