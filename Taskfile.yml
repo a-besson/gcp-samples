@@ -13,6 +13,7 @@ vars:
     - gitleaks
     - libpq
     - kubectl
+    - kics # called by every sample `task cyber-scan`
   # tflint is distributed as a Homebrew cask (terraform-linters/tap), not a
   # formula: `brew install tflint` fails ("No available formula"), and the
   # older `terraform-linters/tflint` tap has been retired (404 on GitHub).
@@ -77,7 +78,7 @@ tasks:
     parallel: true
 
   test-all:
-    desc: "Exécute tous les tests Terraform du projet en parallèle."
+    desc: "Exécute tous les tests Terraform du projet en parallèle, hors-ligne (mock_provider : aucun credential GCP, aucune ressource créée)."
     cmds:
       - task: terraform-cmd
         vars: { DIR: "samples/base", CMD: "test" }
@@ -91,6 +92,8 @@ tasks:
         vars: { DIR: "samples/cloudrun-service", CMD: "test" }
       - task: terraform-cmd
         vars: { DIR: "samples/gke-base-sample", CMD: "test" }
+      - task: terraform-cmd
+        vars: { DIR: "samples/gce-g2-gpu-instance", CMD: "test" }
     parallel: true
 
   terraform-cmd:

@@ -8,7 +8,11 @@ vars:
   NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
   SA_IAC: "sa-iac{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
   REPO_NAME: "cloudrun-simple-service{{.NAME_SUFFIX}}"
+  # Tag pushed by `task build`; plan/apply resolve it to its digest with
+  # gcloud, so every push changes the configuration and rolls a new revision
+  # (a constant ":latest" string never shows a diff).
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/service:latest"
+  ENDPOINT_SERVICE: "exposed-service{{.NAME_SUFFIX}}.endpoints.{{.PROJECT_ID}}.cloud.goog"
 
 env:
   GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
@@ -22,12 +26,10 @@ tasks:
       - task --list
 
   setup:
-    desc: "Create GCS state bucket and Artifact Registry (idempotent)"
+    desc: "Create the GCS state bucket (idempotent; the Artifact Registry repository comes from samples/base)"
     cmds:
       - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
       - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
-      # Artifact Registry is also managed by TF, but we need it for the first build
-      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="SSL Service Repo" --project={{.PROJECT_ID}} || true
 
   build:
     desc: "Build and push the Docker image to Artifact Registry"
@@ -53,24 +55,29 @@ tasks:
     dir: infra
     deps: [init]
     cmds:
-      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service={{.IMAGE_NAME}}"
+      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service=$(gcloud artifacts docker images describe {{.IMAGE_NAME}} --format='value(image_summary.fully_qualified_digest)')"
 
   apply:
     desc: "Apply Terraform changes"
     dir: infra
-    deps: [init, build]
+    deps: [init, undelete-dns, build]
     cmds:
-      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service={{.IMAGE_NAME}}"
+      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service=$(gcloud artifacts docker images describe {{.IMAGE_NAME}} --format='value(image_summary.fully_qualified_digest)')"
+
+  undelete-dns:
+    desc: "Undelete the Cloud Endpoints service if it's in a soft-deleted state"
+    cmds:
+      - gcloud endpoints services undelete {{.ENDPOINT_SERVICE}} --project={{.PROJECT_ID}} 2>/dev/null || true
 
   test:
-    desc: "Run E2E Terraform tests (Apply + Call)"
+    desc: "Run the Terraform tests offline (mock_provider, no GCP credentials needed)"
     dir: infra
-    deps: [init]
     cmds:
-      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service={{.IMAGE_NAME}}"
+      - terraform init -backend=false -input=false
+      - terraform test
 
   e2e:
-    desc: "Test E2E sur l'infra déjà déployée : exposed-service refuse un appel non authentifié (403) et accepte un jeton test_sa (200), en direct et via le Load Balancer."
+    desc: "Test E2E sur l'infra déjà déployée : exposed-service refuse un appel non authentifié (403) et accepte un jeton test_sa (200), en direct et via le Load Balancer HTTPS."
     dir: infra
     # Doit tourner sous l'identité réelle de l'opérateur, pas sous sa-iac
     # (env global du Taskfile) : c'est l'opérateur qui a été autorisé à
@@ -82,7 +89,7 @@ tasks:
       - |
         set -e
         EXPOSED_URL=$(terraform output -raw exposed_service_url)
-        LB_IP=$(terraform output -raw load_balancer_ip)
+        LB_URL=$(terraform output -raw load_balancer_url)
         TESTER_SA=$(terraform output -raw tester_sa_email)
 
         echo '--- 1. Sans jeton (attendu: 403) ---'
@@ -93,8 +100,8 @@ tasks:
         echo '--- 2. Avec jeton, en direct (attendu: 200) ---'
         curl -sk -H "Authorization: Bearer $TOKEN" -w '\n%{http_code}\n' "$EXPOSED_URL"
 
-        echo '--- 3. Avec jeton, via le Load Balancer (attendu: 200 ; peut prendre 5-10 min après un premier apply) ---'
-        curl -sk -H "Authorization: Bearer $TOKEN" -w '\n%{http_code}\n' "http://$LB_IP"
+        echo '--- 3. Avec jeton, via le Load Balancer HTTPS (attendu: 200 ; le certificat géré peut prendre jusqu'\''à 60 min après un premier apply) ---'
+        curl -s -H "Authorization: Bearer $TOKEN" -w '\n%{http_code}\n' "$LB_URL"
 
   destroy:
     desc: "Destroy resources"

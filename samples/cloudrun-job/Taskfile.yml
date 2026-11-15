@@ -7,6 +7,9 @@ vars:
   NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
   SA_IAC: "sa-iac{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
   REPO_NAME: "cloudrun-simple-job{{.NAME_SUFFIX}}"
+  # Tag pushed by `task build`; plan/apply resolve it to its digest with
+  # gcloud, so every push changes the configuration and rolls a new revision
+  # (a constant ":latest" string never shows a diff).
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/job:latest"
 
 env:
@@ -21,11 +24,10 @@ tasks:
       - task --list
 
   setup:
-    desc: "Create GCS state bucket and Artifact Registry (idempotent)"
+    desc: "Create the GCS state bucket (idempotent; the Artifact Registry repository comes from samples/base)"
     cmds:
       - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
       - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
-      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Simple Job Repo" --project={{.PROJECT_ID}} || true
 
   build:
     desc: "Build and push the Docker image to Artifact Registry"
@@ -51,14 +53,14 @@ tasks:
     dir: infra
     deps: [init]
     cmds:
-      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
+      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job=$(gcloud artifacts docker images describe {{.IMAGE_NAME}} --format='value(image_summary.fully_qualified_digest)')"
 
   apply:
     desc: Apply Terraform changes
     dir: infra
     deps: [init, build]
     cmds:
-      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
+      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job=$(gcloud artifacts docker images describe {{.IMAGE_NAME}} --format='value(image_summary.fully_qualified_digest)')"
 
   e2e:
     desc: "Test E2E sur l'infra déjà déployée : déclenche une exécution réelle du Cloud Run Job et attend qu'elle se termine avec succès."
@@ -79,11 +81,11 @@ tasks:
       - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
 
   test:
-    desc: Run Terraform tests
+    desc: Run the Terraform tests offline (mock_provider, no GCP credentials needed)
     dir: infra
-    deps: [init]
     cmds:
-      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_job={{.IMAGE_NAME}}"
+      - terraform init -backend=false -input=false
+      - terraform test
 
   review:
     desc: Run pre-commit hooks on all files

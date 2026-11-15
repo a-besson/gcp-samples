@@ -10,6 +10,7 @@ L'infrastructure est conçue selon les principes de **Privilège Minimum** et de
 - **Accès Sécurisé (IAP)** : Les connexions (SSH et API Ollama) s'effectuent exclusivement via un tunnel **Identity-Aware Proxy (IAP)**. Cela élimine le besoin de firewall ouvert sur le monde et d'IP publique.
 - **Identité & IAM** : L'instance utilise un Service Account dédié (`llm-instance-sa`) avec des rôles granulaires pour le logging, le monitoring et l'accès au tunnel.
 - **Chiffrement** : Les flux sont chiffrés de bout en bout (Tunnel TLS via IAP).
+- **Chaîne d'approvisionnement** : `infra/startup.sh` épingle `cuda_installer` (v1.5.0) et le script d'installation d'Ollama (tag `v0.40.15`, binaires `OLLAMA_VERSION=0.40.15`), vérifie leur SHA-256 avant de les exécuter en root, et n'installe qu'une fois (le script tourne à chaque démarrage planifié). Limite : l'archive Ollama téléchargée par ce script n'est pas vérifiée par checksum ; une image personnalisée (Packer) reste l'option la plus sûre.
 
 ### Schéma des Flux (Authentification & Chiffrement)
 
@@ -60,11 +61,12 @@ Le déploiement échouera si vous n'avez pas les quotas GPU nécessaires.
 ## 🚀 Déploiement
 
 ### 1. Configuration
-Éditez `../../.env` à la racine du projet avec votre `PROJECT_ID` et `REGION`.
+Éditez `../../.env` à la racine du projet avec votre `PROJECT_ID`. La région et la zone GPU sont fixées dans `Taskfile.yml` (`GPU_REGION=europe-west4`, `GPU_ZONE=europe-west4-a`) : le `REGION` de la racine (`europe-west9`) n'est pas utilisé par ce sample.
 
 ### 2. Initialisation & Livraison
 ```bash
 task setup   # Crée le bucket GCS pour le remote state
+task test    # Tests Terraform hors-ligne (mock_provider, aucun credential)
 task apply   # Déploie l'infrastructure
 ```
 
@@ -79,6 +81,7 @@ task tunnel
 > Ce tunnel est **obligatoire** pour connecter vos outils (CLI, IDE) à votre LLM privé. Gardez ce terminal ouvert pendant l'utilisation.
 
 ### SSH sur l'instance
+SSH passe par **OS Login** (les clés SSH du projet sont bloquées) : `task ssh` et `task tunnel` tournent sous votre identité, pas sous `sa-iac`, et demandent `roles/compute.osAdminLogin` (ou `osLogin`) et `roles/iap.tunnelResourceAccessor`.
 ```bash
 task ssh
 ```
@@ -98,7 +101,7 @@ Un script wrapper est disponible pour interagir rapidement avec le modèle via l
 ### Logs de démarrage
 Si vous rencontrez des problèmes avec l'installation des drivers, consultez les logs de l'instance :
 ```bash
-gcloud compute ssh gemma-node --command "cat /var/log/user-data.log" --tunnel-through-iap --project ${PROJECT_ID} --zone europe-west4-a
+gcloud compute ssh gemma-node --command "sudo journalctl -u google-startup-scripts.service" --tunnel-through-iap --project ${PROJECT_ID} --zone europe-west4-a
 ```
 
 ## 🗑 Nettoyage

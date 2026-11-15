@@ -8,11 +8,19 @@
   "pre-commit": {
     "enabled": true
   },
+  "kubernetes": {
+    "managerFilePatterns": ["/^samples/gke-base-sample/k8s/[^/]+\\.yaml$/"]
+  },
   "automerge": true,
   "automergeType": "pr",
   "automergeStrategy": "squash",
   "prConcurrentLimit": 5,
   "minimumReleaseAge": "7 days",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": false,
+    "description": "Weekly refresh of the committed .terraform.lock.hcl files. Not automerged: Terraform has no release-age cooldown, so a refreshed lock can carry a provider release younger than 7 days."
+  },
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "digest", "pinDigest"],
@@ -22,6 +30,44 @@
       "matchUpdateTypes": ["major"],
       "automerge": false,
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Terraform providers keep their ~> ranges: in-range releases update the committed lock file, one release at a time, after minimumReleaseAge.",
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["provider", "required_provider"],
+      "rangeStrategy": "update-lockfile"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Container images set as string literals in Terraform resources (e.g. the cloud-sql-proxy sidecar of alb-internal).",
+      "managerFilePatterns": ["/^samples/[^/]+/infra/[^/]+\\.tf$/"],
+      "matchStrings": [
+        "image\\s*=\\s*\"(?<depName>[a-z0-9.-]+\\.[a-z]+/[a-z0-9._/-]+):(?<currentValue>[A-Za-z0-9._-]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?\""
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "curl test image of gke-base-sample (test-nginx task and the kubectl hint output).",
+      "managerFilePatterns": [
+        "/^samples/gke-base-sample/Taskfile\\.yml$/",
+        "/^samples/gke-base-sample/infra/outputs\\.tf$/"
+      ],
+      "matchStrings": [
+        "--image=(?<depName>curlimages/curl):(?<currentValue>[0-9.]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "KICS image run by the check-cyber workflow.",
+      "managerFilePatterns": ["/^\\.github/workflows/check-cyber\\.yml$/"],
+      "matchStrings": [
+        "(?<depName>docker\\.io/checkmarx/kics):(?<currentValue>v[0-9.]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
     }
   ]
 }

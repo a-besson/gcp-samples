@@ -35,7 +35,7 @@ Ce sample déploie un cluster **GKE Autopilot privé** sur le sous-réseau priv�
 │  │  Cloud NAT → Egress for node updates                  │   │
 │  └───────────────────────────────────────────────────────┘   │
 │                                                              │
-│  🔐 kubectl access: IAP tunnel or authorized networks       │
+│  🔐 kubectl access: base VM (IAP SSH) or authorized networks │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -43,7 +43,7 @@ Ce sample déploie un cluster **GKE Autopilot privé** sur le sous-réseau priv�
 
 - **GKE Autopilot** : Gestion automatisée des nœuds (Google gère scaling, patches, sécurité).
 - **Private Nodes** : Aucun nœud n'a d'IP publique. Sortie internet via Cloud NAT (base).
-- **Control Plane privé** : Endpoint protégé par **Master Authorized Networks** (subnet-priv-a + IAP uniquement).
+- **Control Plane restreint** : endpoint public filtré par **Master Authorized Networks** (subnet-priv-a et les réseaux de `master_authorized_networks` uniquement ; la plage IAP TCP, partagée par tous les clients Google Cloud, n'est pas autorisée), endpoint DNS interne uniquement (`dns_allow_external_traffic = false`).
 - **Nginx Internal Load Balancer** : Le service nginx écoute sur une IP privée du subnet-priv-a. **Non accessible depuis internet ni depuis le subnet-public.**
 - **NetworkPolicy** : Ingress nginx restreint aux plages privées RFC 1918/6598 uniquement.
 - **Security Posture** : Scan de vulnérabilités activé au niveau du cluster.
@@ -66,15 +66,9 @@ gke-base-sample/
 │   ├── variables.tf       # Variables d'entrée
 │   ├── network.tf         # Référence réseau via remote state
 │   ├── gke.tf             # Cluster GKE Autopilot (module officiel)
-│   ├── iam.tf             # IAM et service accounts
 │   ├── outputs.tf         # Outputs + script kubectl
 │   └── tests/
 │       └── unit.tftest.hcl  # Tests Terraform
-└── application/           # Application Java Spring Boot (Clean Architecture)
-    ├── pom.xml
-    ├── Dockerfile
-    ├── Taskfile.yml
-    └── ...                # Code source multi-module (voir application/README.md)
 ```
 
 ---
@@ -130,10 +124,11 @@ Le control plane GKE est protégé par **Master Authorized Networks**. Deux mét
 **Méthode 1 : Via IAP Tunnel (recommandé)**
 ```bash
 # Depuis une VM du subnet privé via IAP
-gcloud compute ssh vm-test-a --zone europe-west9-a --tunnel-through-iap
+gcloud compute ssh vm-test-a-sample --zone europe-west9-a --tunnel-through-iap
 
-# Puis sur la VM :
-gcloud container clusters get-credentials gke-autopilot-sample --region europe-west9
+# Puis sur la VM : --internal-ip cible l'endpoint privé du control plane
+# (subnet-priv-a y est autorisé ; l'endpoint public verrait l'IP du Cloud NAT)
+gcloud container clusters get-credentials gke-autopilot-sample --region europe-west9 --internal-ip
 kubectl get nodes
 ```
 
@@ -149,8 +144,11 @@ kubectl get nodes
 ## 🧪 Tests
 
 ```bash
-# Tests Terraform (plan-level validation)
+# Tests Terraform hors-ligne (mock_provider, aucun credential GCP)
 task test
+
+# Contrôle du cluster déployé (API réelle : nom attendu, statut RUNNING)
+task e2e
 ```
 
 ---
@@ -163,6 +161,8 @@ task test
 | `task apply` | Déployer le cluster GKE |
 | `task get-credentials` | Configurer kubectl |
 | `task deploy-nginx` | Déployer nginx interne |
+| `task test` | Tests Terraform hors-ligne (`mock_provider`) |
+| `task e2e` | Vérifier le cluster déployé (nom, statut `RUNNING`) |
 | `task test-nginx` | Tester la connectivité nginx |
 | `task port-forward` | Tunnel local sécurisé vers nginx |
 | `task undeploy-nginx` | Supprimer nginx du cluster |
@@ -175,7 +175,7 @@ task test
 | Contrôle | Implémentation |
 |---|---|
 | Nœuds privés | `enable_private_nodes = true` |
-| Control plane restreint | Master Authorized Networks (subnet + IAP) |
+| Control plane restreint | Master Authorized Networks (subnet-priv-a + `master_authorized_networks`), endpoint DNS interne |
 | Pas d'IP externe sur services | `service_external_ips = false` |
 | NetworkPolicy | Ingress nginx limité aux plages privées |
 | Pod Security | Non-root, read-only FS, seccomp, no capabilities |

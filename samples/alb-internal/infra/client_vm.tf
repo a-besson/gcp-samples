@@ -12,7 +12,7 @@ resource "google_compute_instance" "client" {
   boot_disk {
     kms_key_self_link = data.terraform_remote_state.bootstrap.outputs.kms_key_compute
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = "debian-cloud/debian-13"
       size  = 10
     }
   }

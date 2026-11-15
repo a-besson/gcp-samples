@@ -29,10 +29,9 @@ module "lb_http" {
       ]
       enable_cdn = false
 
+      # No oauth2_client_id/secret: Google-managed OAuth client (see iap.tf).
       iap_config = {
-        enable               = true
-        oauth2_client_id     = google_iap_client.bastion_iap_client.client_id
-        oauth2_client_secret = google_iap_client.bastion_iap_client.secret
+        enable = true
       }
       log_config = {
         enable      = true

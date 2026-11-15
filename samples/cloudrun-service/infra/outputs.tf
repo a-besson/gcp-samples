@@ -24,6 +24,11 @@ output "tester_sa_email" {
 }
 
 output "load_balancer_ip" {
-  description = "The external IP address of the HTTP Load Balancer."
+  description = "The external IP address of the HTTPS Load Balancer."
   value       = module.lb_http.external_ip
+}
+
+output "load_balancer_url" {
+  description = "The HTTPS URL of the Load Balancer (Cloud Endpoints domain, Google-managed certificate)."
+  value       = "https://${local.domain}"
 }

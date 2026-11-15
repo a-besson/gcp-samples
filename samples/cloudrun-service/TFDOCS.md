@@ -29,8 +29,8 @@
 | ---- | ---- |
 | [google_cloud_run_v2_service.exposed_service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
 | [google_cloud_run_v2_service.internal_service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
-| [google_cloud_run_v2_service_iam_member.invoker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
 | [google_cloud_run_v2_service_iam_member.test_sa_invoker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
+| [google_endpoints_service.lb_dns](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/endpoints_service) | resource |
 | [google_service_account.exposed_service_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.internal_service_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.test_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
@@ -55,6 +55,7 @@
 | <a name="output_exposed_service_url"></a> [exposed\_service\_url](#output\_exposed\_service\_url) | The auto-generated Cloud Run URL for the service |
 | <a name="output_internal_service_name"></a> [internal\_service\_name](#output\_internal\_service\_name) | The name of the internal service |
 | <a name="output_internal_service_url"></a> [internal\_service\_url](#output\_internal\_service\_url) | The auto-generated Cloud Run URL for the internal service |
-| <a name="output_load_balancer_ip"></a> [load\_balancer\_ip](#output\_load\_balancer\_ip) | The external IP address of the HTTP Load Balancer. |
+| <a name="output_load_balancer_ip"></a> [load\_balancer\_ip](#output\_load\_balancer\_ip) | The external IP address of the HTTPS Load Balancer. |
+| <a name="output_load_balancer_url"></a> [load\_balancer\_url](#output\_load\_balancer\_url) | The HTTPS URL of the Load Balancer (Cloud Endpoints domain, Google-managed certificate). |
 | <a name="output_tester_sa_email"></a> [tester\_sa\_email](#output\_tester\_sa\_email) | The email of the tester Service Account |
 <!-- END_TF_DOCS -->

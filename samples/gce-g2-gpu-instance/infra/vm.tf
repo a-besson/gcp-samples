@@ -18,10 +18,11 @@ resource "google_project_iam_member" "monitoring" {
 }
 
 resource "google_compute_instance" "llm_node" {
-  name         = "gemma-node"
-  machine_type = var.machine_type
-  zone         = var.zone
-  project      = var.project_id
+  name                      = "gemma-node"
+  machine_type              = var.machine_type
+  zone                      = var.zone
+  project                   = var.project_id
+  allow_stopping_for_update = true
 
   tags = ["llm-node"]
 
@@ -56,7 +57,32 @@ resource "google_compute_instance" "llm_node" {
     scopes = ["cloud-platform"]
   }
 
-  metadata_startup_script = file("${path.module}/startup.sh")
+  # vTPM and integrity monitoring only: Secure Boot would refuse the NVIDIA
+  # kernel modules installed by startup.sh, which are not signed (signing
+  # needs a Machine Owner Key, see the cuda_installer documentation).
+  shielded_instance_config {
+    enable_secure_boot          = false
+    enable_vtpm                 = true
+    enable_integrity_monitoring = true
+  }
+
+  # SSH keys come from OS Login (IAM) only, never from project metadata.
+  # The startup script lives in metadata (not metadata_startup_script, which
+  # forces a new VM on every change): an edit applies in place, at next boot.
+  metadata = {
+    enable-oslogin         = "TRUE"
+    block-project-ssh-keys = "TRUE"
+    startup-script         = file("${path.module}/startup.sh")
+  }
 
   resource_policies = [google_compute_resource_policy.llm_schedule.self_link]
+
+  lifecycle {
+    # The subnet and the start/stop policy live in var.region (see the
+    # Taskfile GPU_REGION/GPU_ZONE pair): a zone of another region fails late.
+    precondition {
+      condition     = startswith(var.zone, "${var.region}-")
+      error_message = "zone (${var.zone}) must belong to region (${var.region})."
+    }
+  }
 }

@@ -13,7 +13,6 @@ resource "google_compute_region_network_endpoint_group" "api" {
 }
 
 resource "google_compute_region_backend_service" "api" {
-  provider              = google-beta # `security_policy` on a regional backend service is GA-provider-unsupported at the pinned 6.x version
   name                  = "alb-internal-bes${var.name_suffix}"
   project               = var.project_id
   region                = var.region

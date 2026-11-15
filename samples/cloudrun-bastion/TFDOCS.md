@@ -7,15 +7,15 @@
 | ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | ~> 7.0 |
-| <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.2 |
+| <a name="requirement_google-beta"></a> [google-beta](#requirement\_google-beta) | ~> 7.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
-| <a name="requirement_time"></a> [time](#requirement\_time) | ~> 0.11 |
 
 ## Providers
 
 | Name | Version |
 | ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | 7.46.2 |
+| <a name="provider_google-beta"></a> [google-beta](#provider\_google-beta) | 7.46.2 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
@@ -30,11 +30,11 @@
 
 | Name | Type |
 | ---- | ---- |
+| [google-beta_google_project_service_identity.iap](https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/google_project_service_identity) | resource |
 | [google_cloud_run_v2_service.bastion](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
 | [google_cloud_run_v2_service_iam_member.bastion_invoker](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service_iam_member) | resource |
 | [google_compute_global_address.private_ip_alloc](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_global_address) | resource |
 | [google_endpoints_service.bastion_dns](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/endpoints_service) | resource |
-| [google_iap_client.bastion_iap_client](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_client) | resource |
 | [google_iap_web_backend_service_iam_member.bastion_iap_user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iap_web_backend_service_iam_member) | resource |
 | [google_service_account.bastion_sa](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_networking_connection.private_vpc_connection](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_networking_connection) | resource |
@@ -43,6 +43,7 @@
 | [google_sql_user.users](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user) | resource |
 | [random_id.db_name_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [random_password.db_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [google_artifact_registry_docker_image.bastion](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/artifact_registry_docker_image) | data source |
 | [google_project.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 | [terraform_remote_state.base](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/data-sources/remote_state) | data source |
 
@@ -61,7 +62,7 @@
 | ---- | ----------- |
 | <a name="output_bastion_url"></a> [bastion\_url](#output\_bastion\_url) | The HTTPS URL for the Cloud Run Bastion (secured by IAP). |
 | <a name="output_cloud_run_uri"></a> [cloud\_run\_uri](#output\_cloud\_run\_uri) | The auto-generated Cloud Run URI (internal use only). |
-| <a name="output_db_instance_connection_name"></a> [db\_instance\_connection\_name](#output\_db\_instance\_connection\_name) | The connection name of the Cloud SQL instance for use with Cloud SQL Auth Proxy. |
+| <a name="output_db_instance_connection_name"></a> [db\_instance\_connection\_name](#output\_db\_instance\_connection\_name) | The connection name of the Cloud SQL instance (Cloud SQL connectors, or the Auth Proxy with --private-ip from inside the VPC). |
 | <a name="output_db_instance_ip"></a> [db\_instance\_ip](#output\_db\_instance\_ip) | The private IP address of the Cloud SQL instance. |
 | <a name="output_db_password"></a> [db\_password](#output\_db\_password) | The auto-generated password for the test user. |
 | <a name="output_load_balancer_ip"></a> [load\_balancer\_ip](#output\_load\_balancer\_ip) | The external IP address of the Global Load Balancer. |

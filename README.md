@@ -20,7 +20,7 @@ Install the required tools before running any sample:
 **macOS (Homebrew)**
 
 ```bash
-brew install terraform go-task/tap/go-task trivy pre-commit terraform-docs gitleaks libpq
+brew install terraform go-task/tap/go-task trivy pre-commit terraform-docs gitleaks libpq kics
 # tflint is a Homebrew cask (terraform-linters/tap), not a formula
 brew install --cask google-cloud-sdk terraform-linters/tap/tflint
 # On macOS, link libpq to get psql
@@ -33,7 +33,7 @@ echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> ~/.zshrc
 sudo apt-get update && sudo apt-get install -y curl unzip python3-pip
 
 # Terraform
-curl -fsSL https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_linux_amd64.zip \
+curl -fsSL https://releases.hashicorp.com/terraform/1.17.2/terraform_1.17.2_linux_amd64.zip \
   -o terraform.zip && unzip terraform.zip && sudo mv terraform /usr/local/bin/
 
 # Task
@@ -50,8 +50,11 @@ curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/
   && unzip tflint_linux_amd64.zip && sudo mv tflint /usr/local/bin/
 
 # terraform-docs
-curl -sSLo terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/latest/download/terraform-docs-linux-amd64.tar.gz \
-  && tar -xzf terraform-docs.tar.gz && sudo mv terraform-docs /usr/local/bin/
+# (same version as the CI, otherwise the generated TFDOCS.md tables drift)
+curl -sSLO https://github.com/terraform-docs/terraform-docs/releases/download/v0.25.1/terraform-docs-v0.25.1-linux-amd64.tar.gz \
+  && curl -sSLO https://github.com/terraform-docs/terraform-docs/releases/download/v0.25.1/terraform-docs-v0.25.1.sha256sum \
+  && sha256sum --ignore-missing -c terraform-docs-v0.25.1.sha256sum \
+  && tar -xzf terraform-docs-v0.25.1-linux-amd64.tar.gz terraform-docs && sudo mv terraform-docs /usr/local/bin/
 
 # gitleaks
 curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64_tar.gz \
@@ -82,10 +85,10 @@ task --list               # root commands
 |---|---|
 | `task init` | Installs the system dependencies (Homebrew) |
 | `task apply-all` / `task destroy-all` | Deploys / destroys `base` first, then the samples in parallel (**billable**: check the FinOps notes of each sample first) |
-| `task test-all` | Terraform tests of every sample |
+| `task test-all` | Terraform tests of every sample, **offline** (`mock_provider`: no GCP credentials, nothing is created; the CI runs the same tests). Checks against deployed resources live in each sample's `task e2e` |
 | `task review` | `pre-commit run --all-files` |
 
-`gce-g2-gpu-instance` (GPU) is deliberately outside `apply-all`/`destroy-all`/`test-all`: deploy it on its own from its folder. Each sample also has its own `Taskfile.yml` (`cd samples/<name> && task --list`). Deploy [`base`](samples/base/) first: the other samples read its VPC.
+`gce-g2-gpu-instance` (GPU) is deliberately outside `apply-all`/`destroy-all` (its offline tests are part of `test-all`): deploy it on its own from its folder. Each sample also has its own `Taskfile.yml` (`cd samples/<name> && task --list`). Deploy [`base`](samples/base/) first: the other samples read its VPC.
 
 ---
 
@@ -137,7 +140,7 @@ GitHub Actions workflows live in `.github/workflows/` and run **on pull requests
 
 | Workflow | Role |
 |---|---|
-| `build-<sample>.yml` (x7: `base`, `alb-internal`, `cloudrun-bastion`, `cloudrun-job`, `cloudrun-service`, `gce-g2-gpu-instance`, `gke-base-sample`) | One per sample, filtered on `samples/<sample>/**`: `terraform fmt` → `init -backend=false` + `validate` (every root) → `tflint` → `terraform test` (offline mock providers, `alb-internal` only) and, for `alb-internal`, `mvn compile/test/package/verify` |
+| `build-<sample>.yml` (x7: `base`, `alb-internal`, `cloudrun-bastion`, `cloudrun-job`, `cloudrun-service`, `gce-g2-gpu-instance`, `gke-base-sample`) | One per sample, filtered on `samples/<sample>/**`: `terraform fmt` → `init -backend=false` + `validate` (every root) → `tflint` → `terraform test` (offline, mock providers) and, for `alb-internal`, `mvn compile/test/package/verify` |
 | `_build-sample.yml` | Reusable workflow called by every `build-*` |
 | `check-quality.yml` | Repo-wide `pre-commit run --all-files` (gitleaks, fmt, validate, tflint, generated `TFDOCS.md`) |
 | `check-cyber.yml` | Repo-wide KICS, Trivy `config` + `fs` (vuln, secret) and a Trivy image scan per Dockerfile/Containerfile |
@@ -146,7 +149,12 @@ Adding a sample means adding a `build-<sample>.yml` caller (copy an existing one
 
 ### 🔄 Dependency updates
 
-[Renovate](https://docs.renovatebot.com/) (`renovate.json`) keeps GitHub Actions, Docker base images, Terraform providers/modules, pip and Maven dependencies, and `pre-commit` hook revisions up to date. Actions and images are pinned by digest, updates wait 7 days after release (`minimumReleaseAge`) and at most 5 PRs stay open. Minor/patch/digest updates are squash-automerged once the CI is green; major updates need approval from the Dependency Dashboard. The Renovate GitHub App must be installed on the repository.
+[Renovate](https://docs.renovatebot.com/) (`renovate.json`) keeps GitHub Actions, Docker base images, Terraform providers/modules, pip and Maven dependencies, and `pre-commit` hook revisions up to date. Actions and images are pinned by digest, updates wait 7 days after release (`minimumReleaseAge`) and at most 5 PRs stay open. Minor/patch/digest updates are squash-automerged once the CI is green; major updates need approval from the Dependency Dashboard. Image references outside Dockerfiles are tracked too: the GKE manifests (`kubernetes` manager) and, through regex `customManagers`, image literals in Terraform resources (`cloud-sql-proxy`), the curl test image of `gke-base-sample` and the KICS image of `check-cyber.yml`.
+
+> [!IMPORTANT]
+> Two repository settings are prerequisites: the [Renovate GitHub App](https://github.com/apps/renovate) must be installed on the repository, and **Issues must be enabled**, since the Dependency Dashboard (where major updates are approved) is an issue.
+
+Each Terraform root commits its `.terraform.lock.hcl`, with provider hashes for `linux_amd64`, `darwin_arm64` and `darwin_amd64`; CI and the `terraform_validate` hook run `terraform init -lockfile=readonly`, so a provider changes only through a reviewed lock-file diff. Renovate updates these lock files for in-range provider releases (`rangeStrategy: update-lockfile`, after the 7-day cooling-off) and refreshes them weekly (`lockFileMaintenance`, never automerged: Terraform applies no release-age cooldown to that refresh).
 
 ---
 

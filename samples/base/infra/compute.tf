@@ -26,16 +26,17 @@ resource "google_project_iam_member" "test_vm_storage" {
 }
 
 resource "google_compute_instance" "test_vm_a" {
-  project      = var.project_id
-  name         = "vm-test-a${var.name_suffix}"
-  machine_type = "e2-micro"
-  zone         = "${var.region}-a"
+  project                   = var.project_id
+  name                      = "vm-test-a${var.name_suffix}"
+  machine_type              = "e2-micro"
+  zone                      = "${var.region}-a"
+  allow_stopping_for_update = true
 
   tags = ["dev"]
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = "debian-cloud/debian-13"
     }
   }
 
@@ -48,22 +49,30 @@ resource "google_compute_instance" "test_vm_a" {
     scopes = ["cloud-platform"]
   }
 
+  shielded_instance_config {
+    enable_secure_boot          = true
+    enable_vtpm                 = true
+    enable_integrity_monitoring = true
+  }
+
   metadata = {
-    enable-oslogin = "TRUE"
+    enable-oslogin         = "TRUE"
+    block-project-ssh-keys = "TRUE"
   }
 }
 
 resource "google_compute_instance" "test_vm_b" {
-  project      = var.project_id
-  name         = "vm-test-b${var.name_suffix}"
-  machine_type = "e2-micro"
-  zone         = "${var.region}-b"
+  project                   = var.project_id
+  name                      = "vm-test-b${var.name_suffix}"
+  machine_type              = "e2-micro"
+  zone                      = "${var.region}-b"
+  allow_stopping_for_update = true
 
   tags = ["dev"]
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = "debian-cloud/debian-13"
     }
   }
 
@@ -76,7 +85,14 @@ resource "google_compute_instance" "test_vm_b" {
     scopes = ["cloud-platform"]
   }
 
+  shielded_instance_config {
+    enable_secure_boot          = true
+    enable_vtpm                 = true
+    enable_integrity_monitoring = true
+  }
+
   metadata = {
-    enable-oslogin = "TRUE"
+    enable-oslogin         = "TRUE"
+    block-project-ssh-keys = "TRUE"
   }
 }

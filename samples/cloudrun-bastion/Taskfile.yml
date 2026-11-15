@@ -12,6 +12,10 @@ vars:
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/bastion:latest"
   IAP_USER_EMAIL: "{{.TF_VAR_iap_user_email}}"
   ENDPOINT_SERVICE: "bastion{{.NAME_SUFFIX}}.endpoints.{{.PROJECT_ID}}.cloud.goog"
+  # Jump host for the private Cloud SQL instance: test VM A of samples/base
+  # (same name_suffix and region), reachable through IAP TCP forwarding.
+  JUMP_VM: "vm-test-a{{.NAME_SUFFIX}}"
+  JUMP_ZONE: "{{.REGION}}-a"
 
 env:
   GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
@@ -25,12 +29,10 @@ tasks:
       - task --list
 
   setup:
-    desc: "Create GCS state bucket and Artifact Registry (idempotent)"
+    desc: "Create the GCS state bucket (idempotent; the Artifact Registry repository comes from samples/base)"
     cmds:
       - gsutil mb -p {{.PROJECT_ID}} -l {{.REGION}} gs://{{.PROJECT_ID}}-tfstate || true
       - gsutil versioning set on gs://{{.PROJECT_ID}}-tfstate
-      # Artifact Registry is also managed by TF, but we need it for the first build
-      - gcloud artifacts repositories create {{.REPO_NAME}} --repository-format=docker --location={{.REGION}} --description="Bastion Repo" --project={{.PROJECT_ID}} || true
 
   build:
     desc: "Build and push the Docker image to Artifact Registry"
@@ -78,11 +80,11 @@ tasks:
       - terraform destroy --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
 
   test:
-    desc: "Run Terraform tests"
+    desc: "Run the Terraform tests offline (mock_provider, no GCP credentials needed)"
     dir: infra
-    deps: [init]
     cmds:
-      - terraform test -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="name_suffix={{.NAME_SUFFIX}}" -var="iap_user_email={{.IAP_USER_EMAIL}}"
+      - terraform init -backend=false -input=false
+      - terraform test
 
   review:
     desc: "Run pre-commit hooks on all files"
@@ -99,7 +101,7 @@ tasks:
   bastion-run:
     desc: "Run the Bastion container locally for testing (Port 1080 -> 8080)"
     cmds:
-      - echo "Starting Bastion on socks5h://localhost:1080"
+      - echo "Starting Bastion (HTTP proxy) on http://localhost:1080"
       - podman run -p 1080:8080 --name cloudrun-bastion-test --rm {{.IMAGE_NAME}}
 
   test-local:
@@ -108,9 +110,14 @@ tasks:
       - curl -v -x http://localhost:1080 http://google.com
 
   db-proxy:
-    desc: "Start Cloud SQL Auth Proxy (Industrial SOCKS/TCP tunnel)"
+    desc: "Forward localhost:5432 to the private Cloud SQL IP through an IAP SSH tunnel to the base test VM"
+    # Runs as the operator, not sa-iac (global env of this Taskfile): OS Login
+    # and IAP TCP forwarding to the base VMs are operator permissions.
+    env:
+      GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: ""
+      CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: ""
     cmds:
-      - echo "Starting Cloud SQL Auth Proxy for {{.PROJECT_ID}}..."
       - |
-        CONNECTION_NAME=$(cd infra && terraform output -raw db_instance_connection_name)
-        cloud-sql-proxy $CONNECTION_NAME --port 5432
+        DB_IP=$(cd infra && terraform output -raw db_instance_ip)
+        echo "Forwarding localhost:5432 to $DB_IP:5432 through {{.JUMP_VM}} (Ctrl+C to stop)..."
+        gcloud compute ssh {{.JUMP_VM}} --zone={{.JUMP_ZONE}} --project={{.PROJECT_ID}} --tunnel-through-iap -- -N -L 5432:$DB_IP:5432

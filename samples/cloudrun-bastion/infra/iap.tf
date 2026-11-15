@@ -1,9 +1,10 @@
-# --- IAP OAuth Client ---
-# Using the existing project brand (only one allowed per project)
-resource "google_iap_client" "bastion_iap_client" {
-  display_name = "Bastion IAP Client"
-  brand        = "projects/${data.google_project.this.number}/brands/${data.google_project.this.number}"
-}
+# --- IAP OAuth client ---
+# No google_iap_client / google_iap_brand: the IAP OAuth Admin API behind them
+# was shut down on 2026-03-19 (https://cloud.google.com/iap/docs/deprecations).
+# The backend service enables IAP without a client id/secret (loadbalancer.tf),
+# so IAP uses a Google-managed OAuth client: it only serves users of the
+# project's organization and cannot be used programmatically
+# (https://cloud.google.com/iap/docs/custom-oauth-configuration).
 
 # --- IAP Access Binding ---
 # Grants the configured user the role to pass through IAP.

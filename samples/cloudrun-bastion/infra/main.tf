@@ -1,9 +1,19 @@
+# Resolves the "bastion:latest" tag pushed by `task build` to its current
+# digest (same pattern as alb-internal): the tag string never changes, so
+# referencing it directly would never roll a new Cloud Run revision.
+data "google_artifact_registry_docker_image" "bastion" {
+  project       = var.project_id
+  location      = var.region
+  repository_id = data.terraform_remote_state.base.outputs.bastion_repo_name
+  image_name    = "bastion:latest"
+}
+
 locals {
-  bastion_image_url = "${var.region}-docker.pkg.dev/${var.project_id}/${data.terraform_remote_state.base.outputs.bastion_repo_name}/bastion:latest"
+  bastion_image_url = data.google_artifact_registry_docker_image.bastion.self_link
 }
 
 # Resolves the numeric project number from project_id, needed to address the
-# project's IAP OAuth brand (see iap.tf) without a redundant input variable.
+# IAP service agent (see iam.tf) without a redundant input variable.
 data "google_project" "this" {
   project_id = var.project_id
 }

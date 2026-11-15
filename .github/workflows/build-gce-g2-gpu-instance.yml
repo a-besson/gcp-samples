@@ -20,3 +20,4 @@ jobs:
     uses: ./.github/workflows/_build-sample.yml
     with:
       sample: gce-g2-gpu-instance
+      terraform-test: true

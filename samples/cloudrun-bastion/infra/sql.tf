@@ -1,3 +1,9 @@
+# kics-scan disable=02474449-71aa-40a1-87ae-e14497747b00
+# KICS "SQL DB Instance With SSL Disabled" is a false positive here: it only
+# reads the deprecated `require_ssl` attribute, while `ssl_mode =
+# "ENCRYPTED_ONLY"` below enforces TLS. Only that query is disabled, so a
+# public IP or an authorized network would still be reported.
+
 # --- Random suffix for the Cloud SQL instance name ---
 # Instance names must be unique and cannot be reused for up to 7 days after deletion.
 resource "random_id" "db_name_suffix" {
@@ -5,9 +11,11 @@ resource "random_id" "db_name_suffix" {
 }
 
 # --- Cloud SQL Instance ---
+# PostgreSQL 17 (15 reaches community end of life on 2027-11-11): changing
+# database_version on an existing instance runs an in-place major upgrade.
 resource "google_sql_database_instance" "postgres" {
   name             = "bastion-test-pg-${random_id.db_name_suffix.hex}"
-  database_version = "POSTGRES_15"
+  database_version = "POSTGRES_17"
   region           = var.region
   project          = var.project_id
 
@@ -15,21 +23,19 @@ resource "google_sql_database_instance" "postgres" {
   deletion_protection = false
 
   settings {
-    # Low-cost tier suitable for testing
-    tier = "db-f1-micro"
+    # Low-cost tier suitable for testing; ENTERPRISE_PLUS (the API default for
+    # recent versions) rejects shared-core tiers like db-f1-micro.
+    edition = "ENTERPRISE"
+    tier    = "db-f1-micro"
 
     user_labels = {
       role = "bastion-database"
     }
 
-    # KICS: public IP is intentional here (see README "No Public Ingress") —
-    # 0.0.0.0/0 is never an authorized network, so the only path in is an
-    # IAM-authenticated tunnel via Cloud SQL Auth Proxy. KICS also flags SSL
-    # here on the deprecated `require_ssl` attribute instead of `ssl_mode`,
-    # which is already set below.
-    # kics-scan ignore-block
+    # Private IP only (Private Service Access): operators reach it through an
+    # IAP SSH tunnel to the base test VM (`task db-proxy`).
     ip_configuration {
-      ipv4_enabled    = true
+      ipv4_enabled    = false
       private_network = data.terraform_remote_state.base.outputs.network_self_link
       ssl_mode        = "ENCRYPTED_ONLY"
     }

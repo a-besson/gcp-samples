@@ -7,6 +7,11 @@ vars:
   NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
   SA_IAC: "sa-iac{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
   ENVIRONMENT: gce-g2-gpu-instance
+  # Pinned GPU location, like alb-internal's REGION_BE: the root .env REGION
+  # (europe-west9) would put the subnet and the start/stop policy in another
+  # region than the VM zone. Must match the infra/variables.tf defaults.
+  GPU_REGION: europe-west4
+  GPU_ZONE: europe-west4-a
 
 env:
   GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: "{{.SA_IAC}}"
@@ -47,31 +52,47 @@ tasks:
     dir: infra
     deps: [init]
     cmds:
-      - terraform plan -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+      - terraform plan -var="project_id=${PROJECT_ID}" -var="region={{.GPU_REGION}}" -var="zone={{.GPU_ZONE}}"
 
   apply:
     desc: Apply Terraform changes (deploy the GPU instance)
     dir: infra
     deps: [init]
     cmds:
-      - terraform apply --auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+      - terraform apply --auto-approve -var="project_id=${PROJECT_ID}" -var="region={{.GPU_REGION}}" -var="zone={{.GPU_ZONE}}"
 
   destroy:
     desc: Destroy Terraform resources
     dir: infra
     deps: [init]
     cmds:
-      - terraform destroy --auto-approve -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+      - terraform destroy --auto-approve -var="project_id=${PROJECT_ID}" -var="region={{.GPU_REGION}}" -var="zone={{.GPU_ZONE}}"
+
+  test:
+    desc: Run the Terraform tests offline (mock_provider, no GCP credentials needed)
+    dir: infra
+    cmds:
+      - terraform init -backend=false -input=false
+      - terraform test
 
   ssh:
     desc: "Connect to the instance via IAP SSH"
+    # Runs as the operator, not sa-iac: OS Login and IAP TCP forwarding are
+    # operator permissions (roles/compute.osAdminLogin or osLogin,
+    # roles/iap.tunnelResourceAccessor).
+    env:
+      GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: ""
+      CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: ""
     cmds:
-      - gcloud compute ssh gemma-node --project ${PROJECT_ID} --zone ${ZONE:-europe-west4-a} --tunnel-through-iap
+      - gcloud compute ssh gemma-node --project ${PROJECT_ID} --zone {{.GPU_ZONE}} --tunnel-through-iap
 
   tunnel:
     desc: "Open a secure IAP tunnel to the Ollama API on localhost:11434"
+    env:
+      GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: ""
+      CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: ""
     cmds:
-      - gcloud compute start-iap-tunnel gemma-node 11434 --project ${PROJECT_ID} --zone ${ZONE:-europe-west4-a} --local-host-port=localhost:11434
+      - gcloud compute start-iap-tunnel gemma-node 11434 --project ${PROJECT_ID} --zone {{.GPU_ZONE}} --local-host-port=localhost:11434
 
   review:
     desc: Run pre-commit hooks on all files

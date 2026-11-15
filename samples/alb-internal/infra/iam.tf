@@ -76,8 +76,8 @@ resource "google_project_service_identity" "iap" {
 
 # The IAP service agent is the caller Cloud Run actually sees once IAP has
 # validated the end user's identity (row 3, plan.md §5): least-privilege
-# alternative to `allUsers`, which cloudrun-bastion uses today because IAP
-# there sits on a *global* backend service. If IAP on a regional backend
+# alternative to `allUsers` (cloudrun-bastion uses the same binding on its
+# *global* backend service). If IAP on a regional backend
 # service backed by a serverless NEG turns out unsupported (plan.md §5 row 0)
 # and the sample falls back to Cloud Run-native IAP, this binding target
 # changes to the IAP-P4SA and the `iap {}` block moves off the backend

@@ -27,7 +27,7 @@ repos:
 
   # Terraform formatting
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.109.1
+    rev: v1.109.4
     hooks:
       - id: terraform_fmt
         args:
@@ -35,6 +35,8 @@ repos:
       - id: terraform_validate
         args:
           - --args=-no-color
+          # Committed lock files: never let the hook rewrite them
+          - --tf-init-args=-lockfile=readonly
       - id: terraform_docs
         args:
           - --hook-config=--path-to-file=../TFDOCS.md
@@ -47,7 +49,7 @@ repos:
 
   # Conventional Commits (feat, fix, chore, docs, refactor, test)
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]

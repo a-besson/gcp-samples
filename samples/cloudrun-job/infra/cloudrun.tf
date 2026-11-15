@@ -2,7 +2,7 @@
 # A Cloud Run Job runs a container to completion (batch/task).
 # It is triggered manually or via Cloud Scheduler, not via HTTP.
 resource "google_cloud_run_v2_job" "hello_job" {
-  name                = "hello-world-job"
+  name                = "hello-world-job${var.name_suffix}"
   location            = var.region
   project             = var.project_id
   deletion_protection = false
@@ -29,5 +29,5 @@ resource "google_cloud_run_v2_job" "hello_job" {
     }
   }
 
-  depends_on = [module.artifact_registry]
+  depends_on = [module.project_services]
 }

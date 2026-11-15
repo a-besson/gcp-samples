@@ -4,8 +4,8 @@ output "job_name" {
 }
 
 output "artifact_registry_url" {
-  description = "The Artifact Registry repository URL"
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/cloudrun-simple-job"
+  description = "The Artifact Registry repository URL holding the job image (created by samples/base)"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/cloudrun-simple-job${var.name_suffix}"
 }
 
 output "run_job_command" {

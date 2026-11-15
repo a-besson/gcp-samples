@@ -23,6 +23,12 @@ variable "name_suffix" {
   description = "Suffix for resource naming (used for test isolation)"
   type        = string
   default     = "-sample"
+  validation {
+    # Appended to resource names (the impersonated "sa-iac" + suffix is a 30-character service account id): a leading hyphen, lowercase
+    # alphanumerics, no trailing hyphen (same rule as alb-internal).
+    condition     = can(regex("^-[a-z0-9]+(-[a-z0-9]+)*$", var.name_suffix)) && length(var.name_suffix) <= 24
+    error_message = "name_suffix must start with a hyphen, contain only lowercase letters, digits and hyphens, end with a letter or digit, and be at most 24 characters."
+  }
 }
 
 variable "cluster_name" {
@@ -42,4 +48,8 @@ variable "master_authorized_networks" {
     display_name = string
   }))
   default = []
+  validation {
+    condition     = alltrue([for n in var.master_authorized_networks : can(cidrhost(n.cidr_block, 0))])
+    error_message = "Each master_authorized_networks cidr_block must be a valid CIDR range."
+  }
 }
