@@ -35,7 +35,7 @@ resource "google_compute_instance" "test_vm_a" {
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = "debian-cloud/debian-13"
     }
   }
 
@@ -63,7 +63,7 @@ resource "google_compute_instance" "test_vm_b" {
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-12"
+      image = "debian-cloud/debian-13"
     }
   }
 

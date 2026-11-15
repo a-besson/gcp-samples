@@ -1,12 +1,12 @@
-# Debian bookworm's tinyproxy package (1.11.1-2.1+deb12u1, latest available in
-# bookworm/bookworm-security as of this build) has no fix for several open,
-# unpatched CVEs (see PR description): request smuggling via conflicting
+# Debian's tinyproxy packages (trixie 1.11.2-1, bookworm 1.11.1-2.1+deb12u1;
+# even 1.11.3 in trixie-backports) have no fix for several open, unpatched
+# CVEs (see PR description): request smuggling via conflicting
 # Content-Length/Transfer-Encoding handling, chunked-parsing integer overflow,
 # and a Host-header stathost bypass. Debian tracks these as "Minor issue"
-# (no DSA planned), so apt will never resolve them on this branch. The fixes
-# only exist as unreleased commits on upstream master (no tag newer than
-# 1.11.3 includes them) — build from that pinned commit instead.
-FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS builder
+# (no DSA planned), so apt will never resolve them. The fixes only exist as
+# unreleased commits on upstream master (no tag newer than 1.11.3 includes
+# them) — build from that pinned commit instead.
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -33,7 +33,7 @@ RUN ./autogen.sh \
     && make -j"$(nproc)" \
     && make install DESTDIR=/out
 
-FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
+FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
 # Pick up Debian security fixes published after the pinned base image was built
 # (e.g. perl-base, libpcre2); unpinned on purpose, the base digest above stays the anchor.
