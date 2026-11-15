@@ -10,6 +10,7 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 Revue complète consignée dans `REVIEW.md` (non versionné). Seuls les correctifs à faible rayon d'impact sont appliqués ici ; les majeures, l'IAM, le réseau et les changements de coût restent des propositions.
 
 - **CI (`chore(ci)`)** : `actions/setup-java` v6.0.1 → v6.2.0, `actions/setup-python` v7.0.0 → v7.1.0, `github/codeql-action/upload-sarif` v4.38.2 → v4.39.3 (SHA vérifiés contre les tags, releases de plus de 7 jours), `pre-commit` 4.6.2 → 4.7.0 (version locale), image KICS épinglée par digest (`v2.1.20@sha256:…`, comportement inchangé). Non montés : Terraform 1.17.2 et terraform-docs 0.25.1 (publiés il y a moins de 7 jours ; terraform-docs 0.25.1 vérifié sans dérive sur les `TFDOCS.md`), KICS v2.2.0 (nouveau HIGH « Missing User Instruction » sur `cloudrun-bastion/app/Dockerfile`, à traiter après les PR #23/#24).
+- **Hooks et lint (`chore(deps)`)** : `pre-commit-terraform` v1.109.1 → v1.109.4, `conventional-pre-commit` v4.4.0 → v4.5.0, ruleset TFLint `google` 0.40.0 → 0.41.0 (correctifs uniquement, aucune nouvelle alerte sur le dépôt).
 
 ---
 
