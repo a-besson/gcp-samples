@@ -82,7 +82,7 @@ task --list               # root commands
 |---|---|
 | `task init` | Installs the system dependencies (Homebrew) |
 | `task apply-all` / `task destroy-all` | Deploys / destroys `base` first, then the samples in parallel (**billable**: check the FinOps notes of each sample first) |
-| `task test-all` | Terraform tests of every sample |
+| `task test-all` | Terraform tests of every sample. **Online and billable**: needs GCP credentials and a deployed `base`, and the `base` and `cloudrun-service` tests `apply` real resources (only `alb-internal` is offline, with mock providers) |
 | `task review` | `pre-commit run --all-files` |
 
 `gce-g2-gpu-instance` (GPU) is deliberately outside `apply-all`/`destroy-all`/`test-all`: deploy it on its own from its folder. Each sample also has its own `Taskfile.yml` (`cd samples/<name> && task --list`). Deploy [`base`](samples/base/) first: the other samples read its VPC.

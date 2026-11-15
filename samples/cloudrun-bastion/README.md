@@ -1,9 +1,12 @@
-# Cloud Run Bastion (Industrial SOCKS5 Proxy + IAP)
+# Cloud Run Bastion (Tinyproxy HTTP Proxy + IAP)
 
 > [📚 Consulter la documentation Terraform auto-générée (TFDOCS.md)](./TFDOCS.md)
 
 Ce module déploie un **bastion HTTP Proxy industriel** s'appuyant sur **Tinyproxy**, sécurisé par **Identity-Aware Proxy (IAP)**.
 Il est exposé via un **HTTPS Load Balancer** (GCLB) avec un domaine **Cloud Endpoints** managé (`.cloud.goog`).
+
+> [!WARNING]
+> `infra/iap.tf` crée un client OAuth IAP (`google_iap_client`), qui repose sur l'**IAP OAuth Admin API, définitivement arrêtée le 19 mars 2026** ([IAP deprecations](https://cloud.google.com/iap/docs/deprecations)) : `task apply` ne peut plus créer ce client. Le passage au client OAuth géré par Google (sans `oauth2_client_id`/`oauth2_client_secret`, comme `alb-internal`) est à faire ; il limite l'accès aux utilisateurs internes de l'organisation.
 
 ## 🏗️ Architecture
 
@@ -50,13 +53,13 @@ echo "Bastion accessible sur : $BASTION_URL"
 ```
 
 ### 4. Build & Test en Local (Debug)
-Vous pouvez tester le fonctionnement du proxy Dante localement :
+Vous pouvez tester le fonctionnement du proxy Tinyproxy localement :
 
 ```bash
 # 1. Build de l'image Docker localement
 task build
 
-# 2. Lancer le container sur localhost:1080 (mappé sur 443 interne)
+# 2. Lancer le container sur localhost:1080 (mappé sur le port 8080 du conteneur)
 # Terminal 1
 task bastion-run
 
@@ -69,13 +72,15 @@ task test-local
 ## 🧪 Testing the Bastion
 
 ### Option A : Tunnel local via `gcloud` (Recommandé pour Dev)
-Pour utiliser le bastion sans gérer manuellement les tokens OIDC dans vos clients SOCKS5 :
+Pour utiliser le bastion sans gérer manuellement les tokens OIDC :
 
 ```bash
-# Ouvrir le proxy local gcloud (Terminal 1)
-# Cela mappe le service Cloud Run distant vers localhost:1080 et gère l'auth IAP
-gcloud run services proxy cloudrun-bastion-industrial --port=1080
+# Ouvrir le proxy local gcloud (Terminal 1) : mappe le service Cloud Run vers localhost:1080
+gcloud run services proxy cloudrun-bastion-sample --region <REGION> --port=1080
 ```
+
+> [!WARNING]
+> `gcloud run services proxy` appelle directement l'URL `run.app` du service : avec l'ingress `INTERNAL_LOAD_BALANCER` de ce sample, ce trafic est refusé. Cette option ne fonctionne qu'avec une ingress `all`.
 
 ### Option B : Test de connectivité vers la base privée
 Dans un autre terminal, testez l'accès à la base PostgreSQL (provisionnée par `sql.tf`) à travers le tunnel :
@@ -176,6 +181,7 @@ curl -v -x http://localhost:1080 http://$INTERNAL_IP
 | `task test` | Exécute les tests unitaires Terraform |
 | `task bastion-run` | Lance le container en local pour debug |
 | `task test-local` | Teste le proxy local via curl |
+| `task db-proxy` | Lance le Cloud SQL Auth Proxy local (`cloud-sql-proxy`) vers l'instance du sample |
 | `task review` | Exécute pre-commit sur tous les fichiers |
 | `task destroy` | Supprime toutes les ressources provisionnées |
 
@@ -183,7 +189,7 @@ curl -v -x http://localhost:1080 http://$INTERNAL_IP
 
 ## 🛡️ Industrial Features
 
-- **HTTP Proxy via Tinyproxy** : Utilisation de la méthode `CONNECT` pour un tunneling TCP robuste sur HTTP (compatible gcloud/IAP).
+- **HTTP Proxy via Tinyproxy** : proxy HTTP ; la méthode `CONNECT` n'est pas relayée par le GCLB (voir la limitation ci-dessus).
 - **Zéro Accès Public Direct** : Ingress configuré en `INTERNAL_LOAD_BALANCER`. Seul le GCLB (après passage IAP) peut l'atteindre.
 - **Identity-Aware Proxy** : Authentification centralisée via IAM (`roles/iap.httpsResourceAccessor`).
 - **Managed DNS & SSL** : Utilisation de **Cloud Endpoints** pour un domaine `.cloud.goog` avec certificat automatique.
@@ -193,15 +199,11 @@ curl -v -x http://localhost:1080 http://$INTERNAL_IP
 
 ## 🚀 Troubleshooting
 
-### Erreur `google_iap_brand`
-Si vous recevez l'erreur `Error 400: Request contains an invalid argument` lors de la création de la ressource `google_iap_brand` :
-> Un seul écran de consentement OAuth (Brand) est autorisé par projet Google Cloud. Si un écran a déjà été configuré manuellement ou par un autre déploiement, vous devez soit importer la ressource existante dans Terraform, soit la gérer en dehors du cycle de vie Terraform (en utilisant une `data` source ou en commentant la ressource).
+### Erreur à la création de `google_iap_client`
+L'IAP OAuth Admin API utilisée par cette ressource est arrêtée depuis le 19 mars 2026 (voir l'avertissement en tête). Le brand OAuth du projet est lu, pas créé : `iap.tf` le référence par le numéro de projet (`data.google_project.this`).
 
 ### Échec du démarrage du container (Port 8080)
-Cloud Run injecte une variable `$PORT`. Le serveur Dante est configuré pour écouter sur le port 8080. Si vous utilisez un GCLB personnalisé, vérifiez que le backend pointe sur le bon port.
-
-### Erreur de résolution d'interface (eth0)
-Dans Cloud Run Gen2, l'interface `eth0` n'est pas toujours disponible. Le bastion utilise un script `startup.sh` qui détecte dynamiquement l'interface de sortie (`ip route`) avant de lancer Dante.
+Cloud Run injecte une variable `$PORT`. Tinyproxy est configuré pour écouter sur le port 8080 (`app/tinyproxy.conf`), aligné sur `container_port`. Si vous utilisez un GCLB personnalisé, vérifiez que le backend pointe sur le bon port.
 
 ## 📁 Structure du Projet
 

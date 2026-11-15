@@ -39,10 +39,10 @@ A VPC `gcp-sample-base-vpc` is deployed in `europe-west9` with three subnets (IP
 ```text
 base/
 ├── Taskfile.yml
-├── .pre-commit-config.yaml
 ├── infra/
 │   ├── tests/
 │   │   └── unit.tftest.hcl
+│   ├── api.tf               # Required APIs
 │   ├── main.tf
 │   ├── network.tf           # VPC, subnets, NAT, firewall rules
 │   ├── compute.tf           # Test VMs (e2-micro)
@@ -60,8 +60,9 @@ base/
 
 | Repository | Format | Scanning |
 |---|---|---|
-| `cloudrun-simple-job` | Docker | ✅ Vulnerability scanning enabled |
-| `cloudrun-simple-service` | Docker | ✅ Vulnerability scanning enabled |
+| `cloudrun-simple-job<name_suffix>` | Docker | ✅ Vulnerability scanning enabled |
+| `cloudrun-simple-service<name_suffix>` | Docker | ✅ Vulnerability scanning enabled |
+| `cloudrun-bastion<name_suffix>` | Docker | ✅ Vulnerability scanning enabled |
 
 ---
 
@@ -74,13 +75,16 @@ Ensure all tools are installed per the [root README](../../README.md): Terraform
 ### Steps
 
 ```bash
+# 0. Create the GCS state bucket (once per project)
+task setup
+
 # 1. Initialize Terraform (download providers and modules)
 task init
 
 # 2. Review planned changes
 task plan
 
-# 3. Run unit tests
+# 3. Run the Terraform tests (online: the validate_apply run creates and destroys real resources)
 task test
 
 # 4. Apply the configuration
@@ -100,8 +104,6 @@ gcloud compute ssh vm-test-a --zone europe-west9-a --tunnel-through-iap
 # Connect to vm-test-b (private subnet B)
 gcloud compute ssh vm-test-b --zone europe-west9-b --tunnel-through-iap
 
-# Connect to vm-test-public (public subnet)
-gcloud compute ssh vm-test-public --zone europe-west9-c --tunnel-through-iap
 ```
 
 > [!IMPORTANT]
@@ -113,9 +115,10 @@ gcloud compute ssh vm-test-public --zone europe-west9-c --tunnel-through-iap
 
 | Command | Description |
 |---|---|
+| `task setup` | Create the GCS state bucket (idempotent) |
 | `task init` | Initialize Terraform providers and backend |
 | `task plan` | Preview infrastructure changes |
 | `task apply` | Apply the configuration |
-| `task test` | Run `terraform test` unit tests |
+| `task test` | Run `terraform test` (online, needs GCP credentials; `validate_apply` provisions billable resources) |
 | `task review` | Run pre-commit hooks (Gitleaks, fmt, docs, validate) |
 | `task destroy` | Destroy all infrastructure |
