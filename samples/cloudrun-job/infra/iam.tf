@@ -1,7 +1,7 @@
 # --- Service Account ---
 resource "google_service_account" "cloudrun_sa" {
   project      = var.project_id
-  account_id   = "cloudrun-job-runner"
+  account_id   = "cloudrun-job-runner${var.name_suffix}"
   display_name = "Cloud Run Job Runner"
 }
 

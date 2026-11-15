@@ -10,7 +10,7 @@ Batch Python job exécuté sur **Cloud Run (v2)** avec isolation réseau via VPC
 
 - **Cloud Run Job (v2)** — Job batch Python exécuté jusqu'à complétion
 - **Direct VPC Egress** — Tout le trafic transite par le VPC privé (`ALL_TRAFFIC`)
-- **Artifact Registry** — Dépôt Docker privé managé via le module officiel GCP
+- **Artifact Registry** — Dépôt Docker privé `cloudrun-simple-job<name_suffix>`, créé par le sample [`base`](../base/README.md) (module officiel GCP)
 - **IAM Least Privilege** — Service account dédié avec `logWriter` + `artifactregistry.reader`
 - **Terraform Tests** — Validation unitaire de l'infrastructure avant déploiement
 
@@ -24,7 +24,7 @@ Batch Python job exécuté sur **Cloud Run (v2)** avec isolation réseau via VPC
 │                            │
 │  ┌──────────────────────┐  │
 │  │   Cloud Run Job       │  │
-│  │   (hello-world-job)   │  │
+│  │ (hello-world-job-*)   │  │
 │  │  ┌───────────────┐   │  │
 │  │  │  job.py        │   │  │
 │  │  └───────────────┘   │  │
@@ -38,7 +38,7 @@ Batch Python job exécuté sur **Cloud Run (v2)** avec isolation réseau via VPC
 │                            │
 │  ┌──────────────────────┐  │
 │  │  Artifact Registry    │  │
-│  │  cloudrun-simple-job  │  │
+│  │ cloudrun-simple-job-* │  │
 │  └──────────────────────┘  │
 └────────────────────────────┘
 ```
@@ -77,7 +77,7 @@ task e2e
 
 5. **Déclencher le job manuellement** :
 ```bash
-gcloud run jobs execute hello-world-job --region <REGION> --project <PROJECT_ID>
+gcloud run jobs execute "$(cd infra && terraform output -raw job_name)" --region <REGION> --project <PROJECT_ID>
 ```
 
 ---
@@ -111,7 +111,7 @@ cloudrun-job/
 ├── infra/
 │   ├── cloudrun.tf       # Cloud Run Job v2
 │   ├── iam.tf            # Service Account + IAM bindings
-│   ├── main.tf           # APIs + Artifact Registry module
+│   ├── main.tf           # Activation des APIs
 │   ├── network.tf        # Data sources VPC/subnet
 │   ├── outputs.tf        # Outputs utiles
 │   ├── providers.tf      # Provider Google + versions

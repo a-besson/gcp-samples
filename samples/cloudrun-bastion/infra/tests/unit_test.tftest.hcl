@@ -40,8 +40,8 @@ run "validate_service_account" {
   command = plan
 
   assert {
-    condition     = google_service_account.bastion_sa.account_id == "cloudrun-bastion-sa"
-    error_message = "Service account ID must be cloudrun-bastion-sa."
+    condition     = google_service_account.bastion_sa.account_id == "cloudrun-bastion-sa${var.name_suffix}"
+    error_message = "Service account ID must be cloudrun-bastion-sa<name_suffix>."
   }
 }
 

@@ -3,7 +3,7 @@
 # --- Service Account for Cloud Run ---
 resource "google_service_account" "bastion_sa" {
   project      = var.project_id
-  account_id   = "cloudrun-bastion-sa"
+  account_id   = "cloudrun-bastion-sa${var.name_suffix}"
   display_name = "Cloud Run Bastion Service Account"
 }
 

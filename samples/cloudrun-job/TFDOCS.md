@@ -20,7 +20,6 @@
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_artifact_registry"></a> [artifact\_registry](#module\_artifact\_registry) | GoogleCloudPlatform/artifact-registry/google | ~> 0.8 |
 | <a name="module_project_services"></a> [project\_services](#module\_project\_services) | terraform-google-modules/project-factory/google//modules/project_services | ~> 18.0 |
 
 ## Resources
@@ -46,7 +45,7 @@
 
 | Name | Description |
 | ---- | ----------- |
-| <a name="output_artifact_registry_url"></a> [artifact\_registry\_url](#output\_artifact\_registry\_url) | The Artifact Registry repository URL |
+| <a name="output_artifact_registry_url"></a> [artifact\_registry\_url](#output\_artifact\_registry\_url) | The Artifact Registry repository URL holding the job image (created by samples/base) |
 | <a name="output_job_name"></a> [job\_name](#output\_job\_name) | The name of the Cloud Run Job |
 | <a name="output_run_job_command"></a> [run\_job\_command](#output\_run\_job\_command) | gcloud command to manually trigger the Cloud Run Job |
 <!-- END_TF_DOCS -->

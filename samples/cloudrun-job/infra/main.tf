@@ -13,17 +13,5 @@ module "project_services" {
   ]
 }
 
-# --- Artifact Registry ---
-# Uses the official terraform-google-modules module with vulnerability scanning enabled.
-module "artifact_registry" {
-  source  = "GoogleCloudPlatform/artifact-registry/google"
-  version = "~> 0.8"
-
-  project_id    = var.project_id
-  location      = var.region
-  repository_id = "cloudrun-simple-job"
-  description   = "Docker images for Cloud Run Job"
-  format        = "DOCKER"
-
-  depends_on = [module.project_services]
-}
+# The image repository (cloudrun-simple-job<name_suffix>) is created by
+# samples/base, where Taskfile.yml pushes the job image: nothing to create here.

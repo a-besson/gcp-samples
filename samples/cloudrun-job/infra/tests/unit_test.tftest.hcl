@@ -1,9 +1,7 @@
 variables {
   project_id = "test-project"
   region     = "europe-west1"
-  image_job  = "europe-west1-docker.pkg.dev/test-project/cloudrun-simple-job/app:latest"
-  network    = "default"
-  subnet     = "private-subnet"
+  image_job  = "europe-west1-docker.pkg.dev/test-project/cloudrun-simple-job-sample/job:latest"
 }
 
 run "validate_cloud_run_job" {
@@ -24,7 +22,7 @@ run "validate_service_account" {
   command = plan
 
   assert {
-    condition     = google_service_account.cloudrun_sa.account_id == "cloudrun-job-runner"
-    error_message = "Service account ID should be cloudrun-job-runner."
+    condition     = google_service_account.cloudrun_sa.account_id == "cloudrun-job-runner${var.name_suffix}"
+    error_message = "Service account ID should be cloudrun-job-runner<name_suffix>."
   }
 }
