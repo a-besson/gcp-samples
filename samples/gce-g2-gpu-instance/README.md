@@ -60,7 +60,7 @@ Le déploiement échouera si vous n'avez pas les quotas GPU nécessaires.
 ## 🚀 Déploiement
 
 ### 1. Configuration
-Éditez `../../.env` à la racine du projet avec votre `PROJECT_ID` et `REGION`.
+Éditez `../../.env` à la racine du projet avec votre `PROJECT_ID`. La région et la zone GPU sont fixées dans `Taskfile.yml` (`GPU_REGION=europe-west4`, `GPU_ZONE=europe-west4-a`) : le `REGION` de la racine (`europe-west9`) n'est pas utilisé par ce sample.
 
 ### 2. Initialisation & Livraison
 ```bash
@@ -98,7 +98,7 @@ Un script wrapper est disponible pour interagir rapidement avec le modèle via l
 ### Logs de démarrage
 Si vous rencontrez des problèmes avec l'installation des drivers, consultez les logs de l'instance :
 ```bash
-gcloud compute ssh gemma-node --command "cat /var/log/user-data.log" --tunnel-through-iap --project ${PROJECT_ID} --zone europe-west4-a
+gcloud compute ssh gemma-node --command "sudo journalctl -u google-startup-scripts.service" --tunnel-through-iap --project ${PROJECT_ID} --zone europe-west4-a
 ```
 
 ## 🗑 Nettoyage
