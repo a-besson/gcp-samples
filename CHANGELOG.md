@@ -5,6 +5,14 @@ Ce fichier trace l'historique des choix d'architecture, des spécifications et d
 
 ---
 
+## [2026-11-15] - Daily Log - Revue globale du dépôt (obsolescence, vulnérabilités, bonnes pratiques, conformité) et correctifs Tier A
+
+Revue complète consignée dans `REVIEW.md` (non versionné). Seuls les correctifs à faible rayon d'impact sont appliqués ici ; les majeures, l'IAM, le réseau et les changements de coût restent des propositions.
+
+- **CI (`chore(ci)`)** : `actions/setup-java` v6.0.1 → v6.2.0, `actions/setup-python` v7.0.0 → v7.1.0, `github/codeql-action/upload-sarif` v4.38.2 → v4.39.3 (SHA vérifiés contre les tags, releases de plus de 7 jours), `pre-commit` 4.6.2 → 4.7.0 (version locale), image KICS épinglée par digest (`v2.1.20@sha256:…`, comportement inchangé). Non montés : Terraform 1.17.2 et terraform-docs 0.25.1 (publiés il y a moins de 7 jours ; terraform-docs 0.25.1 vérifié sans dérive sur les `TFDOCS.md`), KICS v2.2.0 (nouveau HIGH « Missing User Instruction » sur `cloudrun-bastion/app/Dockerfile`, à traiter après les PR #23/#24).
+
+---
+
 ## [2026-11-11] - Daily Log - Audit de sécurité des dépendances (supply chain) — 4e itération
 
 - **Remédiation nginx (`gke-base-sample`)** : 5 nouvelles CVE *medium* publiées depuis le dernier audit (confirmées sur `nginx.org/en/security_advisories.html`, source primaire) affectent la branche stable jusqu'à `1.30.5` incluse (notre digest pinné résolvait vers `1.30.5`) : CVE-2026-15176 (buffer overflow `alias`+`rewrite`), CVE-2026-93479 (buffer overflow évaluation de script), CVE-2026-95101 (injection de corps de requête HTTP/3), CVE-2026-97629 (forgerie de session via tickets de session TLS), CVE-2026-97205 (use-after-free AIO asynchrone). Toutes corrigées en `1.30.6+`/`1.31.7+`. Risque réel faible pour ce déploiement (HTTP brut, pas de TLS/HTTP/3/AIO/`alias`+`rewrite` dans la configuration par défaut de l'image, service interne derrière NetworkPolicy), mais correctif gratuit et sans risque : le tag flottant `1.30-alpine` pointe déjà vers `1.30.6` (vérifié via l'API Docker Hub et un `HEAD` direct sur le registry avec les deux en-têtes `Accept` manifest-list/OCI index, même digest `sha256:f5116ed4…` dans les deux cas) — seul le digest pinné dans `k8s/nginx.yaml` était périmé (pointait encore vers le build résolvant `1.30.5`). Mis à jour.
