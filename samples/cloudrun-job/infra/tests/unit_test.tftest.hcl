@@ -47,3 +47,14 @@ run "validate_service_account" {
     error_message = "Service account ID should be cloudrun-job-runner<name_suffix>."
   }
 }
+
+# "cloudrun-job-runner" + name_suffix must fit the 30-character account_id.
+run "reject_too_long_name_suffix" {
+  command = plan
+
+  variables {
+    name_suffix = "-way-too-long"
+  }
+
+  expect_failures = [var.name_suffix]
+}

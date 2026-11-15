@@ -48,3 +48,14 @@ run "validate_iap_only_ingress" {
     error_message = "SSH and the Ollama API must only be reachable from the IAP TCP forwarding range, on the llm-node tag."
   }
 }
+
+# BP-03: a zone outside var.region must fail at plan, not at apply.
+run "reject_zone_outside_region" {
+  command = plan
+
+  variables {
+    zone = "europe-west9-a"
+  }
+
+  expect_failures = [google_compute_instance.llm_node]
+}

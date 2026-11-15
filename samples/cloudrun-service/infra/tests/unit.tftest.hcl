@@ -78,3 +78,13 @@ run "validate_names" {
     error_message = "Service names must carry name_suffix."
   }
 }
+
+run "reject_invalid_name_suffix" {
+  command = plan
+
+  variables {
+    name_suffix = "_Test"
+  }
+
+  expect_failures = [var.name_suffix]
+}

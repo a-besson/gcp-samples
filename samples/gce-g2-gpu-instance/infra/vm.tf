@@ -76,4 +76,13 @@ resource "google_compute_instance" "llm_node" {
   }
 
   resource_policies = [google_compute_resource_policy.llm_schedule.self_link]
+
+  lifecycle {
+    # The subnet and the start/stop policy live in var.region (see the
+    # Taskfile GPU_REGION/GPU_ZONE pair): a zone of another region fails late.
+    precondition {
+      condition     = startswith(var.zone, "${var.region}-")
+      error_message = "zone (${var.zone}) must belong to region (${var.region})."
+    }
+  }
 }
