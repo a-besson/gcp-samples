@@ -1,6 +1,15 @@
 # Use the official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+
+# python:3.12-slim moved its base OS from Debian 12 (bookworm) to Debian 13
+# (trixie) on 2026-11-08 (same tag, new digest) — this pin's zlib1g build
+# (1:1.3.dfsg+really1.3.1-1+b1) predates the +deb13u1 security update fixing
+# CVE-2026-76844/CVE-2026-85091 (Trivy HIGH). Unpinned on purpose, the base
+# digest above stays the anchor — see cloudrun-bastion/app/Dockerfile for the
+# same pattern.
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True

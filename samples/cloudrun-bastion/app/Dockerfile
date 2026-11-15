@@ -12,7 +12,7 @@
 # at runtime that PID 1 drops root and runs as uid 999 (tinyproxy) before
 # accepting any connection.
 # kics-scan ignore-line
-FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587 AS builder
+FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -39,7 +39,7 @@ RUN ./autogen.sh \
     && make -j"$(nproc)" \
     && make install DESTDIR=/out
 
-FROM debian:bookworm-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587
+FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
 
 # Pick up Debian security fixes published after the pinned base image was built
 # (e.g. perl-base, libpcre2); unpinned on purpose, the base digest above stays the anchor.
