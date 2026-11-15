@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 7.0"
     }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 7.0"
+    }
   }
 
   backend "gcs" {
@@ -13,6 +17,22 @@ terraform {
 }
 
 provider "google" {
+  project                     = var.project_id
+  region                      = var.region
+  impersonate_service_account = "sa-iac${var.name_suffix}@${var.project_id}.iam.gserviceaccount.com"
+
+  default_labels = {
+    project    = "gcp-samples_gce-g2-gpu-instance"
+    managed-by = "terraform"
+    env        = "dev"
+  }
+}
+
+# Used by the official modules (see the module resources declaring
+# `provider = google-beta`): configured explicitly so those resources get the
+# same default_labels and impersonation as the google provider, and a pinned
+# major instead of whatever google-beta release is newest.
+provider "google-beta" {
   project                     = var.project_id
   region                      = var.region
   impersonate_service_account = "sa-iac${var.name_suffix}@${var.project_id}.iam.gserviceaccount.com"
