@@ -149,9 +149,12 @@ Adding a sample means adding a `build-<sample>.yml` caller (copy an existing one
 
 ### 🔄 Dependency updates
 
-[Renovate](https://docs.renovatebot.com/) (`renovate.json`) keeps GitHub Actions, Docker base images, Terraform providers/modules, pip and Maven dependencies, and `pre-commit` hook revisions up to date. Actions and images are pinned by digest, updates wait 7 days after release (`minimumReleaseAge`) and at most 5 PRs stay open. Minor/patch/digest updates are squash-automerged once the CI is green; major updates need approval from the Dependency Dashboard. The Renovate GitHub App must be installed on the repository.
+[Renovate](https://docs.renovatebot.com/) (`renovate.json`) keeps GitHub Actions, Docker base images, Terraform providers/modules, pip and Maven dependencies, and `pre-commit` hook revisions up to date. Actions and images are pinned by digest, updates wait 7 days after release (`minimumReleaseAge`) and at most 5 PRs stay open. Minor/patch/digest updates are squash-automerged once the CI is green; major updates need approval from the Dependency Dashboard. Image references outside Dockerfiles are tracked too: the GKE manifests (`kubernetes` manager) and, through regex `customManagers`, image literals in Terraform resources (`cloud-sql-proxy`), the curl test image of `gke-base-sample` and the KICS image of `check-cyber.yml`.
 
-Each Terraform root commits its `.terraform.lock.hcl`, with provider hashes for `linux_amd64`, `darwin_arm64` and `darwin_amd64`; CI and the `terraform_validate` hook run `terraform init -lockfile=readonly`, so a provider changes only through a reviewed lock-file diff.
+> [!IMPORTANT]
+> Two repository settings are prerequisites: the [Renovate GitHub App](https://github.com/apps/renovate) must be installed on the repository, and **Issues must be enabled**, since the Dependency Dashboard (where major updates are approved) is an issue.
+
+Each Terraform root commits its `.terraform.lock.hcl`, with provider hashes for `linux_amd64`, `darwin_arm64` and `darwin_amd64`; CI and the `terraform_validate` hook run `terraform init -lockfile=readonly`, so a provider changes only through a reviewed lock-file diff. Renovate updates these lock files for in-range provider releases (`rangeStrategy: update-lockfile`, after the 7-day cooling-off) and refreshes them weekly (`lockFileMaintenance`, never automerged: Terraform applies no release-age cooldown to that refresh).
 
 ---
 
