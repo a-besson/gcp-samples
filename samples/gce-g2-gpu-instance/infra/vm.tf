@@ -18,10 +18,11 @@ resource "google_project_iam_member" "monitoring" {
 }
 
 resource "google_compute_instance" "llm_node" {
-  name         = "gemma-node"
-  machine_type = var.machine_type
-  zone         = var.zone
-  project      = var.project_id
+  name                      = "gemma-node"
+  machine_type              = var.machine_type
+  zone                      = var.zone
+  project                   = var.project_id
+  allow_stopping_for_update = true
 
   tags = ["llm-node"]
 
@@ -54,6 +55,21 @@ resource "google_compute_instance" "llm_node" {
   service_account {
     email  = google_service_account.llm_sa.email
     scopes = ["cloud-platform"]
+  }
+
+  # vTPM and integrity monitoring only: Secure Boot would refuse the NVIDIA
+  # kernel modules installed by startup.sh, which are not signed (signing
+  # needs a Machine Owner Key, see the cuda_installer documentation).
+  shielded_instance_config {
+    enable_secure_boot          = false
+    enable_vtpm                 = true
+    enable_integrity_monitoring = true
+  }
+
+  # SSH keys come from OS Login (IAM) only, never from project metadata.
+  metadata = {
+    enable-oslogin         = "TRUE"
+    block-project-ssh-keys = "TRUE"
   }
 
   metadata_startup_script = file("${path.module}/startup.sh")

@@ -134,6 +134,11 @@ run "validate_compute_test_vms" {
   }
 
   assert {
+    condition     = alltrue([for vm in [google_compute_instance.test_vm_a, google_compute_instance.test_vm_b] : vm.metadata.block-project-ssh-keys == "TRUE" && vm.shielded_instance_config[0].enable_secure_boot])
+    error_message = "Test VMs must block project-wide SSH keys and boot with Shielded VM Secure Boot"
+  }
+
+  assert {
     condition     = contains(google_compute_instance.test_vm_a.tags, "dev")
     error_message = "Test VM A does not have the 'dev' tag"
   }

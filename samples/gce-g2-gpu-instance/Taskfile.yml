@@ -77,11 +77,20 @@ tasks:
 
   ssh:
     desc: "Connect to the instance via IAP SSH"
+    # Runs as the operator, not sa-iac: OS Login and IAP TCP forwarding are
+    # operator permissions (roles/compute.osAdminLogin or osLogin,
+    # roles/iap.tunnelResourceAccessor).
+    env:
+      GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: ""
+      CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: ""
     cmds:
       - gcloud compute ssh gemma-node --project ${PROJECT_ID} --zone {{.GPU_ZONE}} --tunnel-through-iap
 
   tunnel:
     desc: "Open a secure IAP tunnel to the Ollama API on localhost:11434"
+    env:
+      GOOGLE_IMPERSONATE_SERVICE_ACCOUNT: ""
+      CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT: ""
     cmds:
       - gcloud compute start-iap-tunnel gemma-node 11434 --project ${PROJECT_ID} --zone {{.GPU_ZONE}} --local-host-port=localhost:11434
 

@@ -80,6 +80,7 @@ task tunnel
 > Ce tunnel est **obligatoire** pour connecter vos outils (CLI, IDE) à votre LLM privé. Gardez ce terminal ouvert pendant l'utilisation.
 
 ### SSH sur l'instance
+SSH passe par **OS Login** (les clés SSH du projet sont bloquées) : `task ssh` et `task tunnel` tournent sous votre identité, pas sous `sa-iac`, et demandent `roles/compute.osAdminLogin` (ou `osLogin`) et `roles/iap.tunnelResourceAccessor`.
 ```bash
 task ssh
 ```

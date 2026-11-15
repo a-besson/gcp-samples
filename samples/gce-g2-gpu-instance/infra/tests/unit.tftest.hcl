@@ -28,6 +28,16 @@ run "validate_gpu_vm" {
     condition     = google_compute_instance.llm_node.scheduling[0].on_host_maintenance == "TERMINATE"
     error_message = "GPU VMs must terminate on host maintenance."
   }
+
+  assert {
+    condition     = google_compute_instance.llm_node.metadata.enable-oslogin == "TRUE" && google_compute_instance.llm_node.metadata.block-project-ssh-keys == "TRUE"
+    error_message = "SSH must go through OS Login only (no project-wide SSH keys)."
+  }
+
+  assert {
+    condition     = google_compute_instance.llm_node.shielded_instance_config[0].enable_vtpm && google_compute_instance.llm_node.shielded_instance_config[0].enable_integrity_monitoring
+    error_message = "The GPU VM must run with vTPM and integrity monitoring."
+  }
 }
 
 run "validate_iap_only_ingress" {
