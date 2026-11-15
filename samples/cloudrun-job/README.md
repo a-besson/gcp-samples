@@ -57,7 +57,7 @@ Le réseau est lu depuis le state du sample [`base`](../base/README.md) : appliq
 
 ### Déploiement
 
-1. **Configurer les variables** : copier `.env.example` en `.env` à la racine du dépôt et renseigner `PROJECT_ID` et `REGION`. L'image (`image_job`) est dérivée du `Taskfile.yml` (`<REGION>-docker.pkg.dev/<PROJECT_ID>/cloudrun-simple-job-sample/job:latest`) : aucune variable supplémentaire.
+1. **Configurer les variables** : copier `.env.example` en `.env` à la racine du dépôt et renseigner `PROJECT_ID` et `REGION`. L'image (`image_job`) est dérivée du `Taskfile.yml` : `task plan`/`task apply` résolvent le tag `<REGION>-docker.pkg.dev/<PROJECT_ID>/cloudrun-simple-job-sample/job:latest` poussé par `task build` en son digest (`gcloud artifacts docker images describe`), si bien que chaque push déploie une nouvelle révision : aucune variable supplémentaire.
 
 2. **Provisionner l'infrastructure** (`apply` construit et pousse d'abord l'image) :
 ```bash

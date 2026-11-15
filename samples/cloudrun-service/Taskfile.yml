@@ -8,6 +8,9 @@ vars:
   NAME_SUFFIX: '{{.TF_VAR_name_suffix | default "-sample"}}'
   SA_IAC: "sa-iac{{.NAME_SUFFIX}}@{{.PROJECT_ID}}.iam.gserviceaccount.com"
   REPO_NAME: "cloudrun-simple-service{{.NAME_SUFFIX}}"
+  # Tag pushed by `task build`; plan/apply resolve it to its digest with
+  # gcloud, so every push changes the configuration and rolls a new revision
+  # (a constant ":latest" string never shows a diff).
   IMAGE_NAME: "{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/{{.REPO_NAME}}/service:latest"
   ENDPOINT_SERVICE: "exposed-service{{.NAME_SUFFIX}}.endpoints.{{.PROJECT_ID}}.cloud.goog"
 
@@ -54,14 +57,14 @@ tasks:
     dir: infra
     deps: [init]
     cmds:
-      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service={{.IMAGE_NAME}}"
+      - terraform plan -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service=$(gcloud artifacts docker images describe {{.IMAGE_NAME}} --format='value(image_summary.fully_qualified_digest)')"
 
   apply:
     desc: "Apply Terraform changes"
     dir: infra
     deps: [init, undelete-dns, build]
     cmds:
-      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service={{.IMAGE_NAME}}"
+      - terraform apply --auto-approve -var="project_id={{.PROJECT_ID}}" -var="region={{.REGION}}" -var="image_service=$(gcloud artifacts docker images describe {{.IMAGE_NAME}} --format='value(image_summary.fully_qualified_digest)')"
 
   undelete-dns:
     desc: "Undelete the Cloud Endpoints service if it's in a soft-deleted state"

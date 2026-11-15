@@ -23,7 +23,8 @@ Use the provided `Taskfile` to automate the lifecycle:
 # 1. Setup GCS state bucket and Artifact Registry
 task setup
 
-# 2. Build and Push the Docker Image
+# 2. Build and Push the Docker Image (plan/apply resolve the pushed tag to its digest,
+#    so every push rolls a new Cloud Run revision)
 task build
 
 # 3. Deploy the Service

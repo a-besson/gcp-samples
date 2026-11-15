@@ -33,7 +33,7 @@ task setup
 ```
 
 ### 2. Build et Push de l'image
-L'image du bastion doit être disponible dans Artifact Registry avant le déploiement Cloud Run.
+L'image du bastion doit être disponible dans Artifact Registry avant le déploiement Cloud Run. Terraform résout le tag `bastion:latest` en son digest (`data.google_artifact_registry_docker_image`) : chaque nouveau push déploie une nouvelle révision au prochain `task apply`.
 ```bash
 # Build (via Podman/Docker) et push vers Artifact Registry
 task build
