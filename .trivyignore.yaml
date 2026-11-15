@@ -1,9 +1,11 @@
-# Accepted Trivy findings, each scoped to a path and justified — never ignored globally.
+# Accepted Trivy findings, each scoped to a path, justified and given an expiry
+# date (re-review, then renew or drop) — never ignored globally.
 misconfigurations:
   - id: GCP-0061
     paths:
       - "**/beta-autopilot-private-cluster/**"
       - "samples/gke-base-sample/infra/gke.tf"
+    expired_at: 2027-05-15
     statement: >-
       False positive: master_authorized_networks is set on the module call
       (gke-base-sample/infra/gke.tf) but Trivy cannot evaluate the module's dynamic block.
