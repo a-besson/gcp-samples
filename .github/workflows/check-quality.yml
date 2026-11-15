@@ -15,10 +15,10 @@ env:
   # Kept in sync with the version contributors get from `brew install
   # terraform-docs` (root README Prerequisites): a different version renders
   # the TFDOCS.md tables differently and the terraform_docs hook would drift.
-  TERRAFORM_DOCS_VERSION: "0.24.0"
-  # sha256sum of terraform-docs-v0.24.0-linux-amd64.tar.gz, pinned from the
+  TERRAFORM_DOCS_VERSION: "0.25.1"
+  # sha256sum of terraform-docs-v0.25.1-linux-amd64.tar.gz, pinned from the
   # project's published checksums (release assets), verified before use.
-  TERRAFORM_DOCS_SHA256: "9005daf969de0b50134493a2c00078b49f5f5b39d021cda7c89bf4d4f3d776d3"
+  TERRAFORM_DOCS_SHA256: "246f1a3211c9dbbed4c4af82b856dbd40acda78816ac8cdb5203c2869b659c76"
 
 jobs:
   pre-commit:
@@ -27,9 +27,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
-          terraform_version: 1.16.5
+          terraform_version: 1.17.2
           terraform_wrapper: false
       - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
+        with:
+          tflint_version: v0.66.0
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.14"
@@ -40,7 +42,7 @@ jobs:
       # terraform_docs hook shells out to a system `terraform-docs` binary; no
       # official setup-action exists, so install the pinned release and verify
       # its checksum before use.
-      - name: Install tooling
+      - name: Build - install pre-commit and terraform-docs
         run: |
           python -m pip install pre-commit==4.7.0
           asset="terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
@@ -50,10 +52,11 @@ jobs:
           sudo install -m 0755 terraform-docs /usr/local/bin/terraform-docs
           rm -f "${asset}" terraform-docs
           terraform-docs --version
-      - name: Install tflint plugins
+      - name: Build - install tflint plugins
         run: tflint --init --config="$GITHUB_WORKSPACE/.tflint.hcl"
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      - run: pre-commit run --all-files --show-diff-on-failure
+      - name: Lint - pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure
         env:
           GITHUB_TOKEN: ${{ github.token }}

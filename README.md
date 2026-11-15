@@ -33,7 +33,7 @@ echo 'export PATH="/usr/local/opt/libpq/bin:$PATH"' >> ~/.zshrc
 sudo apt-get update && sudo apt-get install -y curl unzip python3-pip
 
 # Terraform
-curl -fsSL https://releases.hashicorp.com/terraform/1.16.5/terraform_1.16.5_linux_amd64.zip \
+curl -fsSL https://releases.hashicorp.com/terraform/1.17.2/terraform_1.17.2_linux_amd64.zip \
   -o terraform.zip && unzip terraform.zip && sudo mv terraform /usr/local/bin/
 
 # Task
@@ -50,8 +50,11 @@ curl -sSLO https://github.com/terraform-linters/tflint/releases/latest/download/
   && unzip tflint_linux_amd64.zip && sudo mv tflint /usr/local/bin/
 
 # terraform-docs
-curl -sSLo terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/latest/download/terraform-docs-linux-amd64.tar.gz \
-  && tar -xzf terraform-docs.tar.gz && sudo mv terraform-docs /usr/local/bin/
+# (same version as the CI, otherwise the generated TFDOCS.md tables drift)
+curl -sSLO https://github.com/terraform-docs/terraform-docs/releases/download/v0.25.1/terraform-docs-v0.25.1-linux-amd64.tar.gz \
+  && curl -sSLO https://github.com/terraform-docs/terraform-docs/releases/download/v0.25.1/terraform-docs-v0.25.1.sha256sum \
+  && sha256sum --ignore-missing -c terraform-docs-v0.25.1.sha256sum \
+  && tar -xzf terraform-docs-v0.25.1-linux-amd64.tar.gz terraform-docs && sudo mv terraform-docs /usr/local/bin/
 
 # gitleaks
 curl -sSfL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_linux_x64_tar.gz \
