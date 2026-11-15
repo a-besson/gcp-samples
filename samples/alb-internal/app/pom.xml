@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.8</version>
+    <version>4.0.9</version>
     <relativePath/>
   </parent>
 
@@ -19,13 +19,10 @@
 
   <properties>
     <java.version>25</java.version>
-    <!-- Overrides of spring-boot-starter-parent's managed versions: CVE-2026-65182,
-         CVE-2026-65905, CVE-2026-68525 (tomcat-embed-core), CVE-2026-54291 (postgresql) and Jackson CVE-2026-89407,
-         CVE-2026-89425, CVE-2026-68497, CVE-2026-91776, CVE-2026-91777 (2.x and 3.x). -->
-    <tomcat.version>11.0.25</tomcat.version>
-    <postgresql.version>42.7.12</postgresql.version>
-    <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
-    <jackson-bom.version>3.1.7</jackson-bom.version>
+    <!-- No managed-version override: 4.0.9 already ships the CVE fixes the
+         former overrides pinned (tomcat 11.0.27, postgresql 42.7.14, jackson
+         2.21.7 / 3.1.7). Re-add one only for a CVE the parent does not fix
+         yet, and remove it once the parent catches up. -->
   </properties>
 
   <dependencies>

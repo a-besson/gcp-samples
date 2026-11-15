@@ -11,7 +11,7 @@ API **Spring Boot 4 / Java 25** sur **Cloud Run**, écrivant dans une base **Clo
 
 - VPC dédié (3 subnets : `subnet-isolated`, `subnet-isolated-application`, `subnet-proxy-only`), aucune dépendance à `samples/base`.
 - ALB régional interne (`INTERNAL_MANAGED`) → Cloud Armor régional (WAF CRS 4.22 + parsing JSON + rate-based ban) → IAP → NEG serverless → Cloud Run.
-- Cloud Run (Spring Boot 4.0.8 / Java 25) sur une image runtime **Docker Hardened Image**, avec sidecar **Cloud SQL Auth Proxy** (`--psc`).
+- Cloud Run (Spring Boot 4.0.9 / Java 25) sur une image runtime **Docker Hardened Image**, avec sidecar **Cloud SQL Auth Proxy** (`--psc`).
 - Cloud SQL PostgreSQL 17, connectivité privée via **Private Service Connect**, endpoint placé littéralement dans `subnet-isolated-application`.
 - **CMEK** (Cloud KMS) sur Cloud SQL, Cloud Run, Artifact Registry, Secret Manager, disque de la VM cliente — 5 clés, rotation 90 jours.
 - Pare-feu **deny-by-default** : allow ciblés par service account (VM) ou tag réseau (Cloud Run).
