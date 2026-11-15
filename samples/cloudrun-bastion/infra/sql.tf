@@ -1,3 +1,9 @@
+# kics-scan disable=02474449-71aa-40a1-87ae-e14497747b00
+# KICS "SQL DB Instance With SSL Disabled" is a false positive here: it only
+# reads the deprecated `require_ssl` attribute, while `ssl_mode =
+# "ENCRYPTED_ONLY"` below enforces TLS. Only that query is disabled, so a
+# public IP or an authorized network would still be reported.
+
 # --- Random suffix for the Cloud SQL instance name ---
 # Instance names must be unique and cannot be reused for up to 7 days after deletion.
 resource "random_id" "db_name_suffix" {
@@ -22,14 +28,10 @@ resource "google_sql_database_instance" "postgres" {
       role = "bastion-database"
     }
 
-    # KICS: public IP is intentional here (see README "No Public Ingress") —
-    # 0.0.0.0/0 is never an authorized network, so the only path in is an
-    # IAM-authenticated tunnel via Cloud SQL Auth Proxy. KICS also flags SSL
-    # here on the deprecated `require_ssl` attribute instead of `ssl_mode`,
-    # which is already set below.
-    # kics-scan ignore-block
+    # Private IP only (Private Service Access): operators reach it through an
+    # IAP SSH tunnel to the base test VM (`task db-proxy`).
     ip_configuration {
-      ipv4_enabled    = true
+      ipv4_enabled    = false
       private_network = data.terraform_remote_state.base.outputs.network_self_link
       ssl_mode        = "ENCRYPTED_ONLY"
     }

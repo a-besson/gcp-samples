@@ -56,14 +56,24 @@ run "validate_iap_access_binding" {
   }
 }
 
-# The public IPv4 is a documented, accepted exception (README "No Public
-# Ingress", .trivyignore.yaml GCP-0017): check the invariants it relies on.
+# Only the IAP service agent may invoke the service: the INTERNAL_LOAD_BALANCER
+# ingress also admits VPC traffic, which must not bypass IAP.
+run "validate_invoker_is_iap_only" {
+  command = plan
+
+  assert {
+    condition     = google_cloud_run_v2_service_iam_member.bastion_invoker.member == "serviceAccount:service-${data.google_project.this.number}@gcp-sa-iap.iam.gserviceaccount.com"
+    error_message = "roles/run.invoker must be granted to the IAP service agent only (never allUsers)."
+  }
+}
+
+# Defense in depth on top of the private-only IP (validate_sql_private_ip).
 run "validate_sql_access_is_proxy_only" {
   command = plan
 
   assert {
     condition     = length(google_sql_database_instance.postgres.settings[0].ip_configuration[0].authorized_networks) == 0
-    error_message = "No authorized network may be set: the public IP must only be reachable through the IAM-authenticated Cloud SQL Auth Proxy."
+    error_message = "No authorized network may be set on the Cloud SQL instance."
   }
 
   assert {
@@ -72,9 +82,6 @@ run "validate_sql_access_is_proxy_only" {
   }
 }
 
-# Known failure: the public IPv4 was enabled on purpose after this test was
-# written (2026-04-08). Kept as is until the design decision is made (remove
-# the public IP, or formally accept it here): never relaxed silently.
 run "validate_sql_private_ip" {
   command = plan
 

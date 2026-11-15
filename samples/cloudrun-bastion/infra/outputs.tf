@@ -30,6 +30,6 @@ output "db_password" {
 }
 
 output "db_instance_connection_name" {
-  description = "The connection name of the Cloud SQL instance for use with Cloud SQL Auth Proxy."
+  description = "The connection name of the Cloud SQL instance (Cloud SQL connectors, or the Auth Proxy with --private-ip from inside the VPC)."
   value       = google_sql_database_instance.postgres.connection_name
 }

@@ -3,7 +3,7 @@ locals {
 }
 
 # Resolves the numeric project number from project_id, needed to address the
-# project's IAP OAuth brand (see iap.tf) without a redundant input variable.
+# IAP service agent (see iam.tf) without a redundant input variable.
 data "google_project" "this" {
   project_id = var.project_id
 }

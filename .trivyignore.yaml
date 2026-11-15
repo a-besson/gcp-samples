@@ -7,13 +7,6 @@ misconfigurations:
       No explicit USER instruction by design: tinyproxy.conf sets `User tinyproxy` /
       `Group tinyproxy`, so PID 1 drops root to uid 999 before accepting any connection
       (same acceptance as the inline KICS ignore in the Dockerfile).
-  - id: GCP-0017
-    paths:
-      - "samples/cloudrun-bastion/infra/sql.tf"
-    statement: >-
-      Public IPv4 on Cloud SQL is intentional (README "No Public Ingress"): no authorized
-      network is set, ssl_mode is ENCRYPTED_ONLY and the only path in is an IAM-authenticated
-      Cloud SQL Auth Proxy tunnel.
   - id: GCP-0061
     paths:
       - "**/beta-autopilot-private-cluster/**"

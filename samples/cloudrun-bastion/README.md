@@ -5,14 +5,15 @@
 Ce module déploie un **bastion HTTP Proxy industriel** s'appuyant sur **Tinyproxy**, sécurisé par **Identity-Aware Proxy (IAP)**.
 Il est exposé via un **HTTPS Load Balancer** (GCLB) avec un domaine **Cloud Endpoints** managé (`.cloud.goog`).
 
-> [!WARNING]
-> `infra/iap.tf` crée un client OAuth IAP (`google_iap_client`), qui repose sur l'**IAP OAuth Admin API, définitivement arrêtée le 19 mars 2026** ([IAP deprecations](https://cloud.google.com/iap/docs/deprecations)) : `task apply` ne peut plus créer ce client. Le passage au client OAuth géré par Google (sans `oauth2_client_id`/`oauth2_client_secret`, comme `alb-internal`) est à faire ; il limite l'accès aux utilisateurs internes de l'organisation.
+> [!IMPORTANT]
+> IAP utilise un **client OAuth géré par Google** (aucun `google_iap_client` : l'IAP OAuth Admin API a été arrêtée le 19 mars 2026, voir [IAP deprecations](https://cloud.google.com/iap/docs/deprecations)). Ce client n'accepte que les **utilisateurs de l'organisation** du projet et **ne permet pas d'accès programmatique** ([custom OAuth configuration](https://cloud.google.com/iap/docs/custom-oauth-configuration)) : un script doit présenter un JWT signé par un compte de service, comme le fait `alb-internal`.
 
 ## 🏗️ Architecture
 
 ```mermaid
 graph LR
-    Dev[Developer] -- Auth Proxy (TCP) --> SQL[Cloud SQL]
+    Dev[Developer] -- IAP SSH tunnel --> VM[base test VM]
+    VM -- PSA private IP --> SQL[Cloud SQL]
     Dev -- HTTPS 443 --> LB[Global Load Balancer]
     LB -- IAP Check --> CR[Cloud Run Bastion]
     CR -- Direct VPC Egress --> VPC[Internal VPC Subnet]
@@ -71,101 +72,65 @@ task test-local
 
 ## 🧪 Testing the Bastion
 
-### Option A : Tunnel local via `gcloud` (Recommandé pour Dev)
-Pour utiliser le bastion sans gérer manuellement les tokens OIDC :
+### Contrôle IAP
+Sans session IAP, le Load Balancer redirige vers la connexion Google (aucune requête n'atteint Cloud Run) :
 
 ```bash
-# Ouvrir le proxy local gcloud (Terminal 1) : mappe le service Cloud Run vers localhost:1080
-gcloud run services proxy cloudrun-bastion-sample --region <REGION> --port=1080
+BASTION_URL=$(cd infra && terraform output -raw bastion_url)
+curl -sI "$BASTION_URL" | head -1   # attendu : HTTP/2 302 (redirection vers accounts.google.com)
 ```
 
-> [!WARNING]
-> `gcloud run services proxy` appelle directement l'URL `run.app` du service : avec l'ingress `INTERNAL_LOAD_BALANCER` de ce sample, ce trafic est refusé. Cette option ne fonctionne qu'avec une ingress `all`.
+Le service Cloud Run n'accepte que l'agent de service IAP comme invocateur (`roles/run.invoker`) : un appel direct à l'URL `run.app`, ou depuis le VPC sans passer par IAP, est refusé.
 
-### Option B : Test de connectivité vers la base privée
-Dans un autre terminal, testez l'accès à la base PostgreSQL (provisionnée par `sql.tf`) à travers le tunnel :
-
-```bash
-# Récupérer l'IP privée de la base de données
-DB_IP=$(cd infra && terraform output -raw db_instance_ip)
-
-# Test de connexion via le proxy HTTP (CONNECT)
-curl -v -x http://localhost:1080 http://$DB_IP:5432
-```
+> [!CAUTION]
+> **Limitation technique** : le Global Load Balancer termine HTTP et ne relaie ni la méthode `CONNECT` ni les requêtes de proxy en forme absolue. Le bastion n'est donc **pas un tunnel TCP** (`psql`, SSH) ni un proxy HTTP générique pour un client distant ; `gcloud run services proxy` est aussi refusé par l'ingress `INTERNAL_LOAD_BALANCER`. Pour la base de données, utilisez le tunnel IAP ci-dessous.
 
 ## 🗄️ Database Connectivity
 
-Connecting to the private Cloud SQL instance from your local machine is achieved using the **Cloud SQL Auth Proxy**. This is the industrial standard for secure database access, as it eliminates the need for VPNs or insecure authorized networks.
+L'instance Cloud SQL n'a **pas d'IP publique** (`ipv4_enabled = false`) : elle n'est joignable que par son IP privée (Private Service Access) depuis le VPC de `base`. Depuis un poste local, `task db-proxy` ouvre un **tunnel SSH via IAP** vers la VM de test `vm-test-a<suffix>` de `samples/base` et redirige `localhost:5432` vers l'IP privée de l'instance.
 
 ### 📐 Architecture & Security
-
-The following diagram illustrates the secure path from your terminal to the data:
 
 ```mermaid
 graph TD
     subgraph "Local Workstation"
-        A[Developer psql] -->|localhost:5432| B(Cloud SQL Auth Proxy)
+        A[Developer psql] -->|localhost:5432| B(gcloud compute ssh --tunnel-through-iap)
     end
 
     subgraph "Google Cloud Platform"
-        B -->|Encrypted Tunnel| C{Cloud SQL API}
-        C -->|IAM Check| D[Cloud SQL Instance]
-
+        B -->|IAP TCP forwarding, port 22| C[base test VM, OS Login]
         subgraph "VPC Network"
-            E[Bastion VPC]
-            F[Google Services VPC]
-            E -.->|Private Service Access| F
-            F --- D
+            C -->|Private Service Access| D[Cloud SQL Instance, private IP]
         end
     end
 
     style B fill:#f9f,stroke:#333,stroke-width:2px
     style D fill:#bbf,stroke:#333,stroke-width:2px
-    style C fill:#fff,stroke:#333,stroke-dasharray: 5 5
 ```
 
 **Security Enforcement Layers:**
-1.  **IAM Authentication**: The proxy requires valid Google Cloud credentials (via `gcloud auth application-default login`).
-2.  **Mutual TLS**: The tunnel automatically handles SSL/TLS certificates and rotating ephemeral keys.
-3.  **No Public Ingress**: The instance has `ipv4_enabled = true`, but **0.0.0.0/0 is NOT authorized**. Only the authenticated Proxy can create a tunnel.
+1.  **IAM Authentication**: IAP TCP forwarding (`roles/iap.tunnelResourceAccessor`) and OS Login on the VM; the task runs as the operator, not `sa-iac`.
+2.  **No Public IP**: the instance has `ipv4_enabled = false` and no authorized network.
+3.  **Encryption**: `ssl_mode = ENCRYPTED_ONLY`, so `psql` negotiates TLS inside the SSH tunnel.
 4.  **Network Isolation**: In-cloud traffic (Cloud Run -> SQL) stays entirely within the private Google network via **Private Service Access (PSA)**.
 
 ### 🚀 Step-by-Step Connection
 
-To query your database, follow these two steps in separate terminal windows:
+`samples/base` must be applied with the same `name_suffix` and `REGION` (its test VM is the jump host).
 
 #### Step 1: Start the Tunnel
-In your first terminal, launch the proxy task:
+In your first terminal, launch the tunnel task:
 ```bash
 task db-proxy
 ```
-*Expected output: `The proxy has started successfully and is ready for new connections!`*
 
 #### Step 2: Run the Query
-In a second terminal, execute the following command (which dynamiclly retrieves the password):
+In a second terminal, execute the following command (which dynamically retrieves the password):
 ```bash
 # Retrieve password and execute psql via the tunnel
 DB_PASS=$(cd infra && terraform output -raw db_password) && \
-PGPASSWORD=$DB_PASS psql -h 127.0.0.1 -p 5432 -U testuser -d testdb -c "SELECT version();"
+PGPASSWORD=$DB_PASS psql "host=127.0.0.1 port=5432 user=testuser dbname=testdb sslmode=require" -c "SELECT version();"
 ```
-
-**Success Output:**
-```text
-                                         version
-------------------------------------------------------------------------------------------
- PostgreSQL 15.17 on x86_64-pc-linux-gnu, compiled by Debian clang version 12.0.1, 64-bit
-(1 row)
-```
-
-### Option C : Test de connectivité HTTP
-```bash
-# Récupérer l'IP privée d'une ressource interne
-INTERNAL_IP="10.x.x.x"
-curl -v -x http://localhost:1080 http://$INTERNAL_IP
-```
-
-> [!CAUTION]
-> **Limitation Technique** : Le Global Load Balancer (GCLB) et IAP bloquent la méthode `HTTP CONNECT`. Le bastion Cloud Run ne peut donc pas être utilisé comme un "bridge" TCP générique pour des clients comme `psql` sans encapsulation Websocket (non implémenté ici). Utilisez le **Cloud SQL Auth Proxy** pour tout accès BDD.
 
 ---
 
@@ -181,7 +146,7 @@ curl -v -x http://localhost:1080 http://$INTERNAL_IP
 | `task test` | Exécute les tests unitaires Terraform |
 | `task bastion-run` | Lance le container en local pour debug |
 | `task test-local` | Teste le proxy local via curl |
-| `task db-proxy` | Lance le Cloud SQL Auth Proxy local (`cloud-sql-proxy`) vers l'instance du sample |
+| `task db-proxy` | Ouvre un tunnel SSH IAP (`localhost:5432`) vers l'IP privée de l'instance Cloud SQL, via la VM de test de `base` |
 | `task review` | Exécute pre-commit sur tous les fichiers |
 | `task destroy` | Supprime toutes les ressources provisionnées |
 
@@ -191,7 +156,7 @@ curl -v -x http://localhost:1080 http://$INTERNAL_IP
 
 - **HTTP Proxy via Tinyproxy** : proxy HTTP ; la méthode `CONNECT` n'est pas relayée par le GCLB (voir la limitation ci-dessus).
 - **Zéro Accès Public Direct** : Ingress configuré en `INTERNAL_LOAD_BALANCER`. Seul le GCLB (après passage IAP) peut l'atteindre.
-- **Identity-Aware Proxy** : Authentification centralisée via IAM (`roles/iap.httpsResourceAccessor`).
+- **Identity-Aware Proxy** : Authentification centralisée via IAM (`roles/iap.httpsResourceAccessor`), client OAuth géré par Google ; seul l'agent de service IAP peut invoquer Cloud Run.
 - **Managed DNS & SSL** : Utilisation de **Cloud Endpoints** pour un domaine `.cloud.goog` avec certificat automatique.
 - **Direct VPC Egress** : Accès natif aux sous-réseaux privés sans passer par un Serverless VPC Connector (latence réduite).
 
@@ -199,8 +164,8 @@ curl -v -x http://localhost:1080 http://$INTERNAL_IP
 
 ## 🚀 Troubleshooting
 
-### Erreur à la création de `google_iap_client`
-L'IAP OAuth Admin API utilisée par cette ressource est arrêtée depuis le 19 mars 2026 (voir l'avertissement en tête). Le brand OAuth du projet est lu, pas créé : `iap.tf` le référence par le numéro de projet (`data.google_project.this`).
+### `task apply` échoue sur `google_iap_client` (state existant)
+Les versions précédentes du sample créaient un client OAuth IAP. Le `plan` suivant le supprime : si la suppression échoue (API OAuth Admin arrêtée), retirez la ressource du state avec `terraform state rm google_iap_client.bastion_iap_client`, puis relancez `task apply`.
 
 ### Échec du démarrage du container (Port 8080)
 Cloud Run injecte une variable `$PORT`. Tinyproxy est configuré pour écouter sur le port 8080 (`app/tinyproxy.conf`), aligné sur `container_port`. Si vous utilisez un GCLB personnalisé, vérifiez que le backend pointe sur le bon port.
