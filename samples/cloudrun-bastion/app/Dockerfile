@@ -6,12 +6,6 @@
 # (no DSA planned), so apt will never resolve them on this branch. The fixes
 # only exist as unreleased commits on upstream master (no tag newer than
 # 1.11.3 includes them) — build from that pinned commit instead.
-#
-# KICS "Missing User Instruction": no explicit USER in the runtime stage, but
-# tinyproxy.conf already sets `User tinyproxy` / `Group tinyproxy` — verified
-# at runtime that PID 1 drops root and runs as uid 999 (tinyproxy) before
-# accepting any connection.
-# kics-scan ignore-line
 FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -46,8 +40,9 @@ FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d
 RUN apt-get update && apt-get upgrade -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Ensure a dedicated tinyproxy user/group exists
-RUN groupadd -r tinyproxy && useradd -r -g tinyproxy -s /sbin/nologin tinyproxy || true
+# Dedicated unprivileged user: the container never runs as root (port 8080
+# needs no privilege), instead of relying on tinyproxy dropping root itself.
+RUN groupadd -r tinyproxy && useradd -r -g tinyproxy -s /sbin/nologin tinyproxy
 
 COPY --from=builder /out/usr/bin/tinyproxy /usr/bin/tinyproxy
 
@@ -58,5 +53,7 @@ RUN chmod +x /usr/local/bin/startup.sh
 
 # Tinyproxy listens on 8080 by default in our config
 EXPOSE 8080
+
+USER tinyproxy
 
 ENTRYPOINT ["/usr/local/bin/startup.sh"]

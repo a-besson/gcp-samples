@@ -1,12 +1,5 @@
 # Accepted Trivy findings, each scoped to a path and justified — never ignored globally.
 misconfigurations:
-  - id: DS-0002
-    paths:
-      - "samples/cloudrun-bastion/app/Dockerfile"
-    statement: >-
-      No explicit USER instruction by design: tinyproxy.conf sets `User tinyproxy` /
-      `Group tinyproxy`, so PID 1 drops root to uid 999 before accepting any connection
-      (same acceptance as the inline KICS ignore in the Dockerfile).
   - id: GCP-0061
     paths:
       - "**/beta-autopilot-private-cluster/**"
