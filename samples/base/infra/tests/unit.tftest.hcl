@@ -108,6 +108,17 @@ run "validate_network_infrastructure" {
     condition     = length(module.firewall_rules.firewall_rules) == 2
     error_message = "Expected exactly two firewall rules from the module"
   }
+
+  # An ingress rule without a source range applies to 0.0.0.0/0.
+  assert {
+    condition     = module.firewall_rules.firewall_rules["allow-iap-ssh${var.name_suffix}"].source_ranges == toset(["35.235.240.0/20"])
+    error_message = "allow-iap-ssh must only admit the IAP TCP forwarding range"
+  }
+
+  assert {
+    condition     = module.firewall_rules.firewall_rules["allow-internal${var.name_suffix}"].source_ranges == toset(["10.0.0.0/22", "10.0.4.0/22", "10.0.20.0/22", "100.64.0.0/22", "100.64.4.0/22"])
+    error_message = "allow-internal must only admit the VPC's own subnet ranges (no 10.0.0.0/8)"
+  }
 }
 
 run "validate_compute_test_vms" {

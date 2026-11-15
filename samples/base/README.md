@@ -29,7 +29,7 @@ A VPC `gcp-sample-base-vpc` is deployed in `europe-west9` with three subnets (IP
 ### 🔒 Security Design
 
 - **No public IPs** on VMs — SSH exclusively via IAP tunnel (`35.235.240.0/20`)
-- **Least-privilege firewall**: internal rule restricts to explicit ports (22, 443, 5432, 8080, 8443, 9090) — no wildcard `0-65535`
+- **Least-privilege firewall**: internal rule restricts to explicit ports (22, 443, 5432, 8080, 8443, 9090) — no wildcard `0-65535` — and to the VPC's own subnet ranges (primary and GKE secondary ranges), not `10.0.0.0/8`
 - **Private Google Access** enabled on private subnets for API calls without internet egress
 
 ---

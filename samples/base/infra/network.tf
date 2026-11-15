@@ -68,13 +68,16 @@ module "firewall_rules" {
   project_id   = var.project_id
   network_name = module.vpc.network_name
 
+  # The `rules` input names the source ranges `ranges` (`source_ranges` is an
+  # ingress_rules attribute and is silently dropped here). An ingress rule
+  # without any source applies to 0.0.0.0/0.
   rules = [
     {
-      name          = "allow-iap-ssh${var.name_suffix}"
-      description   = "Allow SSH from IAP tunnel only (no public SSH)"
-      direction     = "INGRESS"
-      source_ranges = ["35.235.240.0/20"]
-      target_tags   = []
+      name        = "allow-iap-ssh${var.name_suffix}"
+      description = "Allow SSH from IAP tunnel only (no public SSH)"
+      direction   = "INGRESS"
+      ranges      = ["35.235.240.0/20"]
+      target_tags = []
       allow = [
         {
           protocol = "tcp"
@@ -83,11 +86,20 @@ module "firewall_rules" {
       ]
     },
     {
-      name          = "allow-internal${var.name_suffix}"
-      description   = "Allow minimal internal traffic between subnets (least-privilege)"
-      direction     = "INGRESS"
-      source_ranges = ["10.0.0.0/8"]
-      target_tags   = []
+      name        = "allow-internal${var.name_suffix}"
+      description = "Allow minimal internal traffic between subnets (least-privilege)"
+      direction   = "INGRESS"
+      # The VPC's own primary and secondary (GKE pods) ranges only, not all of
+      # 10.0.0.0/8: Direct VPC egress of the Cloud Run samples draws from these
+      # subnets too.
+      ranges = [
+        var.subnet_public_ip,
+        var.subnet_priv_a_ip,
+        var.subnet_priv_b_ip,
+        var.subnet_priv_a_secondary_ip,
+        var.subnet_priv_b_secondary_ip,
+      ]
+      target_tags = []
       allow = [
         {
           protocol = "icmp"
