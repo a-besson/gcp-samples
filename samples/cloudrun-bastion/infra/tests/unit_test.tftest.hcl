@@ -57,8 +57,7 @@ run "validate_iap_access_binding" {
 }
 
 # The public IPv4 is a documented, accepted exception (README "No Public
-# Ingress", .trivyignore.yaml GCP-0017): assert the invariants that exception
-# relies on instead of the opposite of the code.
+# Ingress", .trivyignore.yaml GCP-0017): check the invariants it relies on.
 run "validate_sql_access_is_proxy_only" {
   command = plan
 
@@ -70,5 +69,17 @@ run "validate_sql_access_is_proxy_only" {
   assert {
     condition     = google_sql_database_instance.postgres.settings[0].ip_configuration[0].ssl_mode == "ENCRYPTED_ONLY"
     error_message = "Cloud SQL must only accept encrypted connections (ssl_mode = ENCRYPTED_ONLY)."
+  }
+}
+
+# Known failure: the public IPv4 was enabled on purpose after this test was
+# written (2026-04-08). Kept as is until the design decision is made (remove
+# the public IP, or formally accept it here): never relaxed silently.
+run "validate_sql_private_ip" {
+  command = plan
+
+  assert {
+    condition     = google_sql_database_instance.postgres.settings[0].ip_configuration[0].ipv4_enabled == false
+    error_message = "SQL database must have no public IP (ipv4_enabled = false)."
   }
 }
