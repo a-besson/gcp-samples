@@ -1,6 +1,6 @@
 module "artifact_registry_job" {
   source  = "GoogleCloudPlatform/artifact-registry/google"
-  version = "~> 0.8"
+  version = "~> 0.9"
 
   project_id    = var.project_id
   location      = var.region
@@ -13,7 +13,7 @@ module "artifact_registry_job" {
 
 module "artifact_registry_service" {
   source  = "GoogleCloudPlatform/artifact-registry/google"
-  version = "~> 0.8"
+  version = "~> 0.9"
 
   project_id    = var.project_id
   location      = var.region
@@ -26,7 +26,7 @@ module "artifact_registry_service" {
 
 module "artifact_registry_bastion" {
   source  = "GoogleCloudPlatform/artifact-registry/google"
-  version = "~> 0.8"
+  version = "~> 0.9"
 
   project_id    = var.project_id
   location      = var.region
